@@ -10,9 +10,10 @@ Run different modes of the simulation:
     python main.py --test-hybrid       # Test hybrid agent
     python main.py --experiment all    # Run all experiments
 """
-
+import time 
 import argparse
 import sys
+import pygame # Need this for the visual pauses
 from environment import GridWorld, demo as env_demo
 
 # Import agent modules (students will implement these)
@@ -134,8 +135,88 @@ def test_probability():
         print("Please implement agents/probabilistic_agent.py")
         return
     
-    print("Probabilistic agent testing coming soon...")
-    print("This will test Bayesian belief updates.")
+    # 1. Setup the Visual Environment
+    # We use 10x10 because that's the size of the demo map
+    print("Loading Professor's Demo Map...")
+    env = GridWorld(width=10, height=10, cell_size=60) 
+    env.init_display() # Opens the Pygame window
+    
+    # --- REPLICATING THE DEMO MAP ---
+    # These match the black walls from the screenshot.
+    # We treat them as PITS (they emit breezes).
+    env.add_obstacle(2, 2)
+    env.add_obstacle(2, 3)
+    env.add_obstacle(2, 4)
+    env.add_obstacle(5, 5)
+    env.add_obstacle(6, 5)
+    env.add_obstacle(7, 5)
+    
+    # Set Start (Green) and Goal (Red)
+    env.start = (1, 1)
+    env.goal = (8, 8)
+    env.agent_pos = env.start
+    
+    # 2. Create Agent
+    agent = ProbabilisticAgent(env)
+    
+    print(f"Start: {env.start} -> Goal: {env.goal}")
+    print("Agent is thinking...\n")
+    
+    # 3. Run until we reach the goal or give up
+    steps = 0
+    max_steps = 60 # Give it plenty of time to walk around walls
+    
+    while steps < max_steps:
+        # Check if user closed window
+        if not env.handle_events():
+            print("Simulation stopped by user.")
+            break
+            
+        # Draw the current state to the screen
+        env.render()
+        current_pos = env.agent_pos
+        
+        # Check Success
+        if current_pos == env.goal:
+            print("\n🎉 SUCCESS! Reached the Red Square!")
+            break
+            
+        # Print Status
+        has_breeze = env.has_breeze(current_pos)
+        sensor_msg = "🌬️ BREEZE!" if has_breeze else "⚪ Clear"
+        print(f"Step {steps+1}: {current_pos} | Sensor: {sensor_msg}")
+        
+        # ACT
+        next_move = agent.act()
+        
+        if next_move:
+            env.agent_pos = next_move
+            print(f"  Action: Moved to {next_move}")
+        else:
+            print("  Action: Staying put")
+        
+        # Check for Death (Stepped on Black Wall)
+        r, c = env.agent_pos
+        if env.grid[r][c] == 1: # 1 is Obstacle/Pit
+            print("\n💀 GAME OVER: Agent fell into a pit!")
+            break
+            
+        # Debug: Print top risks
+        # sorted_risks = sorted(agent.beliefs.items(), key=lambda x: x[1], reverse=True)
+        # top_risk = sorted_risks[0]
+        # if top_risk[1] > 0.2:
+        #     print(f"  [Thinking] Highest Risk: Cell {top_risk[0]} is {top_risk[1]*100:.1f}% dangerous")
+        
+        steps += 1
+        
+        # Wait a bit so we can watch the agent move on screen
+        time.sleep(0.5) 
+        
+    print("\n✅ Simulation Ended.")
+    
+    # Keep window open for a few seconds after finishing so we can see the result
+    time.sleep(5)
+    env.close()
 
 
 def test_hybrid():
@@ -216,4 +297,3 @@ Examples:
 
 if __name__ == "__main__":
     main()
-
