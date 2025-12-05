@@ -42,7 +42,27 @@ def bfs(env, start: Tuple[int, int], goal: Tuple[int, int]) -> Tuple[Optional[Li
     """
     
     # TODO: Implement BFS
-    # 
+    queue = deque([start])
+    visited = {start}
+    parent = {start: None}
+    expanded = 0
+    
+    while queue:
+        current = queue.popleft()
+        expanded += 1
+        
+        if current == goal:
+            path = reconstruct_path(parent, start, goal)
+            cost = len(path) - 1  
+            return path, cost, expanded
+        
+        for neighbor in env.get_neighbors(current):
+            if neighbor not in visited:
+                visited.add(neighbor)
+                parent[neighbor] = current
+                queue.append(neighbor)
+    
+    return None, float('inf'), expanded
     # Hints:
     # - Use collections.deque() for the queue
     # - Keep a visited set to track explored nodes
@@ -109,7 +129,7 @@ def ucs(env, start: Tuple[int, int], goal: Tuple[int, int]) -> Tuple[Optional[Li
     """
     
     # TODO: Implement UCS
-    #
+    
     # Hints:
     # - Use heapq for priority queue: heapq.heappush(heap, (priority, item))
     # - Priority should be cumulative path cost: g(n)
@@ -120,6 +140,35 @@ def ucs(env, start: Tuple[int, int], goal: Tuple[int, int]) -> Tuple[Optional[Li
     
     # Your code here:
     
+    frontier = [(0, start)]
+    explored = set()
+    cost_so_far = {start: 0}
+    parent = {start: None}
+    expanded = 0
+
+    while frontier: 
+        current_cost, current = heapq.heappop(frontier)
+
+        if current in explored:
+            continue
+
+        explored.add(current)
+        expanded += 1
+
+        if current == goal:
+            path = reconstruct_path(parent, start, goal)
+            return path, current_cost, expanded
+        
+        for neighbor in env.get_neighbors(current):
+            new_cost = current_cost + env.get_cost(current, neighbor)
+
+            if neighbor not in cost_so_far or new_cost < cost_so_far[neighbor]:
+                cost_so_far[neighbor] = new_cost
+                parent[neighbor] = current
+                heapq.heappush(frontier, (new_cost, neighbor))
+
+    return None, float('inf'), expanded
+
     raise NotImplementedError("UCS not implemented yet - this is your task!")
     
     # Example structure (delete and implement properly):
@@ -190,7 +239,46 @@ def astar(env, start: Tuple[int, int], goal: Tuple[int, int],
     """
     
     # TODO: Implement A*
-    #
+    if heuristic == 'manhattan':
+        h = lambda pos: env.manhattan_distance(pos, goal)
+    elif heuristic == 'euclidean':
+        h = lambda pos: env.euclidean_distance(pos, goal)
+    else:
+        raise ValueError(f"Unknown heuristic: {heuristic}")
+    
+    g_score = {start: 0}
+    f_score = {start: h(start)}
+    frontier = [(f_score[start], start)]
+    explored = set()
+    parent = {start: None}
+    expanded = 0
+
+    while frontier:
+        current_f, current = heapq.heappop(frontier)
+        
+        if current in explored:
+            continue
+        
+        explored.add(current)
+        expanded += 1
+        
+        if current == goal:
+            path = reconstruct_path(parent, start, goal)
+            return path, g_score[current], expanded
+        
+        for neighbor in env.get_neighbors(current):
+            if neighbor in explored:
+                continue
+            
+            tentative_g = g_score[current] + env.get_cost(current, neighbor)
+            
+            if neighbor not in g_score or tentative_g < g_score[neighbor]:
+                g_score[neighbor] = tentative_g
+                f_score[neighbor] = tentative_g + h(neighbor)
+                parent[neighbor] = current
+                heapq.heappush(frontier, (f_score[neighbor], neighbor))
+    
+    return None, float('inf'), expanded
     # Hints:
     # - Very similar to UCS, but priority is f(n) = g(n) + h(n)
     # - Use env.manhattan_distance(pos, goal) or env.euclidean_distance(pos, goal)
@@ -268,7 +356,21 @@ def reconstruct_path(parent: dict, start: Tuple[int, int], goal: Tuple[int, int]
         [(0,0), (0,1), (1,1), (2,1)]
     """
     # TODO: Implement path reconstruction
-    #
+
+    path = []
+    current = goal 
+
+    while current is not None:
+        path.append(current)
+        current = parent.get(current)
+
+    path.reverse()
+
+    if path and path[0] == start:
+        return path
+    else:
+        return[]
+    
     # Hint: Follow parent pointers backwards from goal to start, then reverse
     
     raise NotImplementedError("Path reconstruction not implemented yet!")
