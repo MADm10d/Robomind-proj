@@ -181,8 +181,8 @@ def test_probability():
             print("\n🎉 SUCCESS! Reached the Red Square!")
             break
             
-        # Print Status
-        has_breeze = env.has_breeze(current_pos)
+        #  Ask the Agent
+        has_breeze = agent.sense_breeze(current_pos)
         sensor_msg = "🌬️ BREEZE!" if has_breeze else "⚪ Clear"
         print(f"Step {steps+1}: {current_pos} | Sensor: {sensor_msg}")
         
