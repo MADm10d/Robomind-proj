@@ -1,134 +1,143 @@
 """
-Bayesian Reasoning Module
+Probabilistic Agent - RoboMind Project
 SE444 - Artificial Intelligence Course Project
 
 Implemented by: Amr Issa/230265
 Phase 3 (Week 5-6)
 """
 
-from typing import Dict, Tuple
+import random
+from environment import GridWorld
+from ai_core.bayes_reasoning import update_belief_map
 
-def bayes_update(prior: float, likelihood: float, total_prob: float) -> float:
+class ProbabilisticAgent:
     """
-    Standard Bayes rule implementation.
-    P(H|E) = (P(E|H) * P(H)) / P(E)
+    An agent that uses Bayesian reasoning to navigate safely 
+    and reach the goal.
     """
-    # avoid division by zero if evidence is impossible
-    if total_prob == 0:
-        return 0.0
+    
+    def __init__(self, environment: GridWorld):
+        self.env = environment
+        self.rows = environment.height
+        self.cols = environment.width
+        self.goal = environment.goal 
         
-    return (likelihood * prior) / total_prob
-
-
-def compute_evidence(prior: float, prob_if_true: float, prob_if_false: float) -> float:
-    """
-    Calculates the total probability of the evidence (normalization factor).
-    P(E) = P(E|H)P(H) + P(E|~H)P(~H)
-    """
-    prior_false = 1.0 - prior
-    
-    # weighted sum of probabilities
-    evidence = (prob_if_true * prior) + (prob_if_false * prior_false)
-    return evidence
-
-
-def sensor_model(has_pit: bool, accuracy: float = 0.9) -> Tuple[float, float]:
-    """
-    Returns the probability of the sensor beeping (True) vs silent (False)
-    given the actual state of the cell.
-    """
-    if has_pit:
-        # If there is a pit: accuracy= (0.9), error =(0.1) 
-        return accuracy, 1.0 - accuracy
-    else:
-        # If there is no pit:
-        # Chance of false alarm = error (0.1) which is false positive
-        # Chance of silence (correct) = accuracy (0.9)
-        return 1.0 - accuracy, accuracy
-
-
-def update_belief_map(belief_map: Dict[Tuple[int, int], float],
-                      is_breeze: bool,
-                      current_pos: Tuple[int, int], 
-                      sensor_accuracy: float = 0.9) -> Dict[Tuple[int, int], float]:
-    """
-    Updates the probability grid based on the sensor reading.
-    NOTE: Only updates neighbors of the current position!
-    """
-    new_grid = belief_map.copy()
-    
-    # Get neighbors (Up, Down, Left, Right)
-    r, c = current_pos
-    neighbors = [(r+1, c), (r-1, c), (r, c+1), (r, c-1)]
-    
-    # Iterate through neighbors and apply Bayes' rule
-    for nx, ny in neighbors:
+        # Initialize Beliefs (Prior = 20%)
+        self.beliefs = {}
+        for r in range(self.rows):
+            for c in range(self.cols):
+                self.beliefs[(r, c)] = 0.2
+                
+        # Start is safe
+        start_pos = environment.agent_pos
+        self.beliefs[start_pos] = 0.0
         
-        # Make sure neighbor is actually in our grid
-        if (nx, ny) in belief_map:
-            prior_belief = belief_map[(nx, ny)]
+        self.visited = set()
+        self.visited.add(start_pos)
+
+        # Track how many times we visit each cell to break loops
+        self.visit_counts = {}
+
+    # --- SENSOR METHOD (Crucial for Phase 3) ---
+    def sense_breeze(self, pos):
+        """
+        Simulate a Breeze Sensor by looking at the grid directly.
+        Returns True if any neighbor is a Pit (Obstacle).
+        """
+        r, c = pos
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        
+        for dr, dc in directions:
+            nr, nc = r + dr, c + dc
+            # Check boundaries
+            if 0 <= nr < self.rows and 0 <= nc < self.cols:
+                # Check for Pit/Obstacle (Value 1)
+                # We access the environment's grid data directly here
+                if self.env.grid[nr][nc] == 1: 
+                    return True
+        return False
+    # -------------------------------------------
+        
+    def update_beliefs(self, is_breeze, pos):
+        """Update probability grid based on sensor."""
+        self.beliefs = update_belief_map(
+            self.beliefs, 
+            is_breeze, 
+            pos,
+            sensor_accuracy=0.9
+        )
+        
+    def get_distance_to_goal(self, pos):
+        """Simple Manhattan distance to the Red Square."""
+        r, c = pos
+        gr, gc = self.goal
+        return abs(r - gr) + abs(c - gc)
+    
+    def act(self):
+        """
+        Decision Loop: Sense -> Think -> Act
+        """
+        curr_pos = self.env.agent_pos     
+        
+        # 1. Sense (Using our internal sensor)
+        is_breeze = self.sense_breeze(curr_pos)
+        
+        # 2. Update Beliefs
+        self.update_beliefs(is_breeze, curr_pos)
+        
+        # 3. Get Neighbors
+        possible_moves = self._get_valid_neighbors(curr_pos)
+        random.shuffle(possible_moves) 
+        
+        # 4. Filter Moves by Risk
+        # "Safe" means less than 40% chance of being a pit.
+        SAFE_THRESHOLD = 0.4
+        
+        safe_moves = []
+        risky_moves = []
+        
+        for move in possible_moves:
+            prob = self.beliefs.get(move, 0.2)
             
-            # Get the likelihoods from the sensor model
-            # we need: P(Breeze | Pit) and P(Breeze | No Pit)
-            
-            p_breeze_if_pit, p_no_breeze_if_pit = sensor_model(True, sensor_accuracy)
-            p_breeze_if_safe, p_no_breeze_if_safe = sensor_model(False, sensor_accuracy)
-            
-            if is_breeze:
-                # we felt a breeze, so we use the "Detection" probabilities
-                likelihood = p_breeze_if_pit      # 0.9
-                likelihood_false = p_breeze_if_safe # 0.1
+            # Categorize
+            if prob < SAFE_THRESHOLD:
+                safe_moves.append(move)
             else:
-                # No breeze, use the "Miss/Correct" probabilities
-                likelihood = p_no_breeze_if_pit      # 0.1
-                likelihood_false = p_no_breeze_if_safe # 0.9
-
-            # 1. Compute Normalization (Total Evidence)
-            total_prob = compute_evidence(prior_belief, likelihood, likelihood_false)
+                risky_moves.append((move, prob))
+        
+        # 5. Make Decision
+        best_move = None
+        
+        if safe_moves:
+            # --- "BOREDOM" LOGIC ---
+            # Score = Distance + (Number of times we visited it * 5)
+            # This makes visited squares look "expensive" so we don't loop forever.
             
-            # 2. Compute Posterior (New Belief)
-            posterior = bayes_update(prior_belief, likelihood, total_prob)
+            def calculate_score(move):
+                dist = self.get_distance_to_goal(move)
+                visits = self.visit_counts.get(move, 0)
+                return dist + (visits * 5)
+
+            best_move = min(safe_moves, key=calculate_score)
+
+        elif risky_moves:
+            # Desperation: Pick lowest risk
+            best_move = min(risky_moves, key=lambda x: x[1])[0]
             
-            # 3. Update the grid
-            new_grid[(nx, ny)] = posterior
+        # Execute
+        if best_move:
+            self.visit_counts[best_move] = self.visit_counts.get(best_move, 0) + 1
+            self.visited.add(best_move)
+            return best_move
+        else:
+            return curr_pos
 
-    return new_grid
-
-
-# ============================================================================
-# Testing Code 
-# ============================================================================
-
-if __name__ == "__main__":
-    print("--- Testing Math Functions ---")
-    
-    # Test 1: Simple Bayes
-    # Disease example (Standard test case)
-    p_sick = 0.01
-    p_pos_if_sick = 0.95
-    p_pos_if_healthy = 0.10
-    
-    ev = compute_evidence(p_sick, p_pos_if_sick, p_pos_if_healthy)
-    post = bayes_update(p_sick, p_pos_if_sick, ev)
-    
-    print(f"Medical Test: P(Disease|Positive) should be ~8.7%. Calculated: {post*100:.2f}%")
-
-    # Test 2: Grid Update
-    print("\n--- Testing Grid Update ---")
-    
-    # Fake map with 3 cells
-    # (0,1) is the neighbor of (0,0)
-    test_grid = {(0,0): 0.0, (0,1): 0.2, (1,0): 0.2}
-    
-    print(f"Prior at (0,1): {test_grid[(0,1)]}")
-    print("Agent at (0,0) feels BREEZE.")
-    
-    # NOTE: We must pass agent position (0,0) now
-    updated = update_belief_map(test_grid, is_breeze=True, current_pos=(0,0))
-    
-    print(f"Posterior at (0,1): {updated[(0,1)]:.4f}")
-    
-    if updated[(0,1)] > 0.2:
-        print("Success: Probability increased!")
-    else:
-        print("Fail: Probability did not increase.")
+    def _get_valid_neighbors(self, pos):
+        r, c = pos
+        moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        valid = []
+        for dr, dc in moves:
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < self.rows and 0 <= nc < self.cols:
+                valid.append((nr, nc))
+        return valid
