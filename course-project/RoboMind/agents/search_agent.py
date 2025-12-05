@@ -57,7 +57,10 @@ class SearchAgent:
             path, cost, expanded = astar(self.env, self.env.start, self.env.goal, heuristic)
         else:
             raise ValueError(f"Unknown algorithm: {algorithm}")
-        
+
+        if path is None:
+            path = []
+            
         self.path = path
         
         return path, cost, expanded
