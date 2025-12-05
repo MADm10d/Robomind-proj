@@ -122,8 +122,62 @@ def test_logic():
         print("Please implement agents/logic_agent.py")
         return
     
-    print("Logic agent testing coming soon...")
-    print("This will test propositional logic reasoning.")
+    # --- 1. Setup the Environment ---
+    import time
+    # Create a 10x10 world
+    env = GridWorld(width=10, height=10, cell_size=60)
+    
+    # Add random obstacles (but keep start/goal clear)
+    env.add_random_obstacles(10) 
+    env.start = (0, 0)
+    env.goal = (9, 9)
+    env.agent_pos = env.start
+    
+    # Initialize Pygame window
+    env.init_display()
+    
+    # --- 2. Create the Agent ---
+    print("Initializing Logic Agent...")
+    try:
+        agent = LogicAgent(env)
+    except Exception as e:
+        print(f"❌ Error initializing agent: {e}")
+        return
+
+    print("Simulation started! Agent is thinking...")
+
+    # --- 3. Run the Simulation Loop ---
+    running = True
+    steps = 0
+    
+    while running:
+        # Handle Pygame events (clicking close button, etc.)
+        if not env.handle_events():
+            running = False
+            break
+        
+        # If we haven't reached the goal yet, run the AI cycle
+        if not env.is_goal(env.agent_pos):
+            try:
+                # The AI Brain Cycle
+                agent.perceive()  # 1. Update KB with sensors
+                agent.reason()    # 2. Run inference
+                agent.act()       # 3. Decide and move
+                steps += 1
+            except Exception as e:
+                print(f"❌ Error during agent execution: {e}")
+                import traceback
+                traceback.print_exc()
+                running = False
+        
+        # Draw the world
+        env.render()
+        
+        # Slow down slightly so we can watch it move (0.1s delay)
+        time.sleep(0.3)
+
+    env.close()
+    print(f"\nTest finished. Total steps: {steps}")
 
 
 def test_probability():
