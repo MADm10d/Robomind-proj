@@ -85,6 +85,11 @@ class SearchAgent:
 
 # Example usage and testing
 if __name__ == "__main__":
+    import pygame
+    import time
+
+    pygame.init()
+
     print("=== Search Agent Test ===\n")
     
     # Create a test environment
@@ -100,13 +105,30 @@ if __name__ == "__main__":
     
     # Create agent
     agent = SearchAgent(env)
-    
-    # Test search (will fail until you implement the algorithms!)
-    try:
-        path, cost, expanded = agent.search('bfs')
-        print(f"\n✓ BFS found path with {len(path)} steps, cost={cost}, expanded={expanded} nodes")
-    except NotImplementedError:
-        print("\n⚠️  BFS not implemented yet - please implement in ai_core/search_algorithms.py")
-    except Exception as e:
-        print(f"\n❌ Error: {str(e)}")
 
+    algos = [
+        ('bfs', 'Breadth-First Search'),
+        ('ucs', 'Uniform Cost Search'),
+        ('astar', 'A* Search')
+    ]
+
+    for algo, name in algos:
+        env.reset()
+        env.agent_pos = env.start
+        env.visited = set()
+        env.render()
+
+        # Test search (will fail until you implement the algorithms!)
+        try:
+            path, cost, expanded = agent.search(algo)
+            print(f"\n✓ {name} found path with {len(path)} steps, cost={cost}, expanded={expanded} nodes")
+            agent.move_along_path()
+            time.sleep(1)
+
+        except NotImplementedError:
+            print("\n⚠️  {name} not implemented yet - please implement in ai_core/search_algorithms.py")
+        except Exception as e:
+            print(f"\n❌ Error: {str(e)}")
+
+    time.sleep(2)
+    pygame.quit()
