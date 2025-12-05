@@ -2,194 +2,133 @@
 Bayesian Reasoning Module
 SE444 - Artificial Intelligence Course Project
 
-TODO: Implement Bayesian belief updates for handling uncertainty
+Implemented by: Amr Issa/230265
 Phase 3 (Week 5-6)
 """
 
 from typing import Dict, Tuple
 
-
-def bayes_update(prior: float, likelihood: float, evidence: float) -> float:
+def bayes_update(prior: float, likelihood: float, total_prob: float) -> float:
     """
-    Update belief using Bayes' Rule.
-    
-    Bayes' Rule:
-        P(H|E) = P(E|H) * P(H) / P(E)
-    
-    Where:
-        - P(H|E) = posterior probability (what we want to compute)
-        - P(E|H) = likelihood (probability of evidence given hypothesis)
-        - P(H) = prior probability (initial belief)
-        - P(E) = evidence probability (normalization factor)
-    
-    Args:
-        prior: P(Hypothesis) - our initial belief
-        likelihood: P(Evidence|Hypothesis) - how likely we see this evidence if H is true
-        evidence: P(Evidence) - overall probability of seeing this evidence
-    
-    Returns:
-        posterior: P(Hypothesis|Evidence) - updated belief
-    
-    Example:
-        Sensor detects obstacle with 90% accuracy.
-        Prior belief cell is blocked: 0.3
-        Sensor says "blocked"
+    Standard Bayes rule implementation.
+    P(H|E) = (P(E|H) * P(H)) / P(E)
+    """
+    # avoid division by zero if evidence is impossible
+    if total_prob == 0:
+        return 0.0
         
-        >>> P_H = 0.3              # prior: 30% believe it's blocked
-        >>> P_E_given_H = 0.9      # likelihood: if blocked, 90% sensor says blocked
-        >>> P_E = 0.3*0.9 + 0.7*0.1  # evidence: total prob of "blocked" reading
-        >>> posterior = bayes_update(P_H, P_E_given_H, P_E)
-        >>> print(f"Updated belief: {posterior:.2f}")  # ~0.79 (79%)
-    """
-    # TODO: Implement Bayes' rule
-    #
-    # Formula: posterior = (likelihood * prior) / evidence
-    #
-    # Watch out for division by zero!
-    
-    raise NotImplementedError("Bayes' rule not implemented yet!")
+    return (likelihood * prior) / total_prob
 
 
-def compute_evidence(prior: float, likelihood_h: float, likelihood_not_h: float) -> float:
+def compute_evidence(prior: float, prob_if_true: float, prob_if_false: float) -> float:
     """
-    Compute total probability of evidence P(E) using law of total probability.
-    
-    P(E) = P(E|H)*P(H) + P(E|¬H)*P(¬H)
-    
-    Args:
-        prior: P(H)
-        likelihood_h: P(E|H)
-        likelihood_not_h: P(E|¬H)
-    
-    Returns:
-        P(E): Total probability of evidence
-    
-    Example:
-        >>> P_E = compute_evidence(0.3, 0.9, 0.1)
-        >>> print(f"P(evidence) = {P_E:.3f}")  # 0.34
+    Calculates the total probability of the evidence (normalization factor).
+    P(E) = P(E|H)P(H) + P(E|~H)P(~H)
     """
-    # TODO: Implement law of total probability
-    raise NotImplementedError("Evidence computation not implemented yet!")
+    prior_false = 1.0 - prior
+    
+    # weighted sum of probabilities
+    evidence = (prob_if_true * prior) + (prob_if_false * prior_false)
+    return evidence
+
+
+def sensor_model(has_pit: bool, accuracy: float = 0.9) -> Tuple[float, float]:
+    """
+    Returns the probability of the sensor beeping (True) vs silent (False)
+    given the actual state of the cell.
+    """
+    if has_pit:
+        # If there is a pit: accuracy= (0.9), error =(0.1) 
+        return accuracy, 1.0 - accuracy
+    else:
+        # If there is no pit:
+        # Chance of false alarm = error (0.1) which is false positive
+        # Chance of silence (correct) = accuracy (0.9)
+        return 1.0 - accuracy, accuracy
 
 
 def update_belief_map(belief_map: Dict[Tuple[int, int], float],
-                      sensor_reading: bool,
+                      is_breeze: bool,
+                      current_pos: Tuple[int, int], 
                       sensor_accuracy: float = 0.9) -> Dict[Tuple[int, int], float]:
     """
-    Update entire grid belief map based on sensor reading.
-    
-    Sensor Model:
-        - If cell has obstacle:
-            P(sensor says "obstacle" | obstacle exists) = sensor_accuracy (e.g., 0.9)
-        - If cell is free:
-            P(sensor says "obstacle" | no obstacle) = 1 - sensor_accuracy (e.g., 0.1)
-    
-    Args:
-        belief_map: Dictionary mapping (row, col) -> probability of obstacle
-        sensor_reading: True if sensor detects obstacle, False otherwise
-        sensor_accuracy: Probability sensor is correct (default 0.9)
-    
-    Returns:
-        updated_belief_map: Updated probabilities for each cell
-    
-    Example:
-        >>> beliefs = {(0,0): 0.5, (0,1): 0.3, (1,0): 0.7}
-        >>> sensor_says_obstacle = True
-        >>> updated = update_belief_map(beliefs, sensor_says_obstacle, 0.9)
+    Updates the probability grid based on the sensor reading.
+    NOTE: Only updates neighbors of the current position!
     """
-    # TODO: Implement belief map update
-    #
-    # For each cell:
-    #   1. Get prior belief
-    #   2. Compute likelihood based on sensor reading and accuracy
-    #   3. Compute evidence (total probability)
-    #   4. Apply Bayes' rule to get posterior
-    #   5. Store updated belief
+    new_grid = belief_map.copy()
     
-    raise NotImplementedError("Belief map update not implemented yet!")
+    # Get neighbors (Up, Down, Left, Right)
+    r, c = current_pos
+    neighbors = [(r+1, c), (r-1, c), (r, c+1), (r, c-1)]
+    
+    # Iterate through neighbors and apply Bayes' rule
+    for nx, ny in neighbors:
+        
+        # Make sure neighbor is actually in our grid
+        if (nx, ny) in belief_map:
+            prior_belief = belief_map[(nx, ny)]
+            
+            # Get the likelihoods from the sensor model
+            # we need: P(Breeze | Pit) and P(Breeze | No Pit)
+            
+            p_breeze_if_pit, p_no_breeze_if_pit = sensor_model(True, sensor_accuracy)
+            p_breeze_if_safe, p_no_breeze_if_safe = sensor_model(False, sensor_accuracy)
+            
+            if is_breeze:
+                # we felt a breeze, so we use the "Detection" probabilities
+                likelihood = p_breeze_if_pit      # 0.9
+                likelihood_false = p_breeze_if_safe # 0.1
+            else:
+                # No breeze, use the "Miss/Correct" probabilities
+                likelihood = p_no_breeze_if_pit      # 0.1
+                likelihood_false = p_no_breeze_if_safe # 0.9
 
+            # 1. Compute Normalization (Total Evidence)
+            total_prob = compute_evidence(prior_belief, likelihood, likelihood_false)
+            
+            # 2. Compute Posterior (New Belief)
+            posterior = bayes_update(prior_belief, likelihood, total_prob)
+            
+            # 3. Update the grid
+            new_grid[(nx, ny)] = posterior
 
-def sensor_model(actual_state: bool, sensor_accuracy: float = 0.9) -> Tuple[float, float]:
-    """
-    Define the sensor model probabilities.
-    
-    Args:
-        actual_state: True if obstacle exists, False if free
-        sensor_accuracy: Accuracy of sensor
-    
-    Returns:
-        (P(sensor=True|state), P(sensor=False|state))
-    
-    Example:
-        >>> P_true, P_false = sensor_model(actual_state=True, sensor_accuracy=0.9)
-        >>> print(f"If obstacle exists: P(detect)={P_true}, P(miss)={P_false}")
-    """
-    # TODO: Implement sensor model
-    if actual_state:  # obstacle exists
-        return sensor_accuracy, 1 - sensor_accuracy
-    else:  # no obstacle
-        return 1 - sensor_accuracy, sensor_accuracy
+    return new_grid
 
 
 # ============================================================================
-# Testing Code
+# Testing Code 
 # ============================================================================
 
 if __name__ == "__main__":
-    print("=" * 60)
-    print("  Testing Bayesian Reasoning")
-    print("=" * 60 + "\n")
+    print("--- Testing Math Functions ---")
     
-    print("Example: Medical diagnosis")
-    print("-" * 40)
-    print("Disease prevalence: 1% (P(Disease) = 0.01)")
-    print("Test accuracy: 95% (P(+|Disease) = 0.95)")
-    print("False positive: 10% (P(+|Healthy) = 0.10)")
-    print("\nPatient tests positive. What's the probability they have the disease?")
+    # Test 1: Simple Bayes
+    # Disease example (Standard test case)
+    p_sick = 0.01
+    p_pos_if_sick = 0.95
+    p_pos_if_healthy = 0.10
     
-    try:
-        # Prior
-        P_disease = 0.01
-        P_healthy = 1 - P_disease
-        
-        # Likelihood
-        P_pos_given_disease = 0.95
-        P_pos_given_healthy = 0.10
-        
-        # Evidence
-        P_pos = compute_evidence(P_disease, P_pos_given_disease, P_pos_given_healthy)
-        
-        # Posterior
-        P_disease_given_pos = bayes_update(P_disease, P_pos_given_disease, P_pos)
-        
-        print(f"\nResult: P(Disease|+) = {P_disease_given_pos:.1%}")
-        print("(Surprisingly low despite positive test!)")
-        
-    except NotImplementedError:
-        print("\n⚠️  Bayes' rule not implemented yet!")
+    ev = compute_evidence(p_sick, p_pos_if_sick, p_pos_if_healthy)
+    post = bayes_update(p_sick, p_pos_if_sick, ev)
     
-    print("\n" + "=" * 60)
-    print("  Example: Robot Sensor")
-    print("=" * 60)
-    print("\nRobot sensor is 90% accurate")
-    print("Prior belief cell has obstacle: 30%")
-    print("Sensor detects obstacle")
-    print("\nWhat's updated belief?")
-    
-    try:
-        P_obstacle = 0.30
-        P_detect_if_obstacle = 0.90
-        P_detect_if_free = 0.10
-        
-        P_detect = compute_evidence(P_obstacle, P_detect_if_obstacle, P_detect_if_free)
-        P_obstacle_given_detect = bayes_update(P_obstacle, P_detect_if_obstacle, P_detect)
-        
-        print(f"\nResult: P(Obstacle|Detected) = {P_obstacle_given_detect:.1%}")
-        print(f"Belief increased from {P_obstacle:.1%} to {P_obstacle_given_detect:.1%}")
-        
-    except NotImplementedError:
-        print("\n⚠️  Bayes' rule not implemented yet!")
-    
-    print("\n💡 Tip: Start with the basic bayes_update() function,")
-    print("   then build up to belief maps!")
+    print(f"Medical Test: P(Disease|Positive) should be ~8.7%. Calculated: {post*100:.2f}%")
 
+    # Test 2: Grid Update
+    print("\n--- Testing Grid Update ---")
+    
+    # Fake map with 3 cells
+    # (0,1) is the neighbor of (0,0)
+    test_grid = {(0,0): 0.0, (0,1): 0.2, (1,0): 0.2}
+    
+    print(f"Prior at (0,1): {test_grid[(0,1)]}")
+    print("Agent at (0,0) feels BREEZE.")
+    
+    # NOTE: We must pass agent position (0,0) now
+    updated = update_belief_map(test_grid, is_breeze=True, current_pos=(0,0))
+    
+    print(f"Posterior at (0,1): {updated[(0,1)]:.4f}")
+    
+    if updated[(0,1)] > 0.2:
+        print("Success: Probability increased!")
+    else:
+        print("Fail: Probability did not increase.")
