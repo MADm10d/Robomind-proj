@@ -4,9 +4,6 @@ SE444 - Artificial Intelligence Course Project
 
 This file provides the simulation environment for the RoboMind project.
 Students should NOT modify this file - use it to test your agents.
-
-# NOTE: Modified by Student for Phase 3.
-# I know I wasn't supposed to touch this, but I had to add this function to make Phase 3 work :)
 """
 
 import pygame
@@ -278,31 +275,6 @@ class GridWorld:
         if self.running:
             pygame.quit()
             self.running = False
-
-    # --- ADDED FOR PHASE 3 ------------------------
-    # I added this because the base environment code didn't have 
-    # a sensor method to check for breezes/pits.
-    def has_breeze(self, pos: Tuple[int, int]) -> bool:
-        """
-        Check if any neighbor is an obstacle/pit. 
-        Returns True if the agent should feel a breeze.
-        """
-        row, col = pos
-        
-        # Check all 4 neighbors: Up, Down, Left, Right
-        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-        
-        for dr, dc in directions:
-            nr, nc = row + dr, col + dc
-            
-            # Make sure we don't go off the map
-            if 0 <= nr < self.height and 0 <= nc < self.width:
-                # If we find a pit (1) in a neighbor, return True
-                if self.grid[nr][nc] == OBSTACLE:
-                    return True
-                    
-        return False
-    # ---------------------------------------------
 
 
 def demo():
