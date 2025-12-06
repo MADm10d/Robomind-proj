@@ -80,4 +80,5 @@ class LogicAgent:
                 if self.kb.ask(f"Previous({self.env.agent_pos[0]},{self.env.agent_pos[1]},{neighbor_x},{neighbor_y})"): # if the agent has valid neighbors and has visited them and they aren't the goal it backtracks to the previous move
                     print("Backtracking")
                     self.env.agent_pos = move
-           
+                    return
+        
