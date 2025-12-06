@@ -182,7 +182,9 @@ def test_probability():
             break
             
         # Print Status
-        has_breeze = env.has_breeze(current_pos)
+        # --- FIXED LINE: Use agent.sense_breeze instead of env.has_breeze ---
+        has_breeze = agent.sense_breeze(current_pos)
+        
         sensor_msg = "🌬️ BREEZE!" if has_breeze else "⚪ Clear"
         print(f"Step {steps+1}: {current_pos} | Sensor: {sensor_msg}")
         
@@ -201,12 +203,6 @@ def test_probability():
             print("\n💀 GAME OVER: Agent fell into a pit!")
             break
             
-        # Debug: Print top risks
-        # sorted_risks = sorted(agent.beliefs.items(), key=lambda x: x[1], reverse=True)
-        # top_risk = sorted_risks[0]
-        # if top_risk[1] > 0.2:
-        #     print(f"  [Thinking] Highest Risk: Cell {top_risk[0]} is {top_risk[1]*100:.1f}% dangerous")
-        
         steps += 1
         
         # Wait a bit so we can watch the agent move on screen
@@ -215,7 +211,7 @@ def test_probability():
     print("\n✅ Simulation Ended.")
     
     # Keep window open for a few seconds after finishing so we can see the result
-    time.sleep(5)
+    time.sleep(3)
     env.close()
 
 
