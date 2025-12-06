@@ -1,14 +1,3 @@
-"""
-Search Agent - RoboMind Project
-SE444 - Artificial Intelligence Course Project
-
-TODO: Implement search algorithms
-- Breadth-First Search (BFS)
-- Uniform Cost Search (UCS)  
-- A* Search
-
-Phase 1 of the project (Week 1-2)
-"""
 
 from environment import GridWorld
 from typing import Tuple, List, Optional
@@ -16,34 +5,18 @@ from ai_core.search_algorithms import bfs, ucs, astar
 
 
 class SearchAgent:
-    """
-    An agent that uses search algorithms to navigate the grid world.
-    """
-    
+
+     # Initialize the search agent.
     def __init__(self, environment: GridWorld):
-        """
-        Initialize the search agent.
         
-        Args:
-            environment: The GridWorld environment
-        """
         self.env = environment
         self.path = []
         self.current_pos = environment.start
     
     def search(self, algorithm='bfs', heuristic='manhattan') -> Tuple[Optional[List], float, int]:
-        """
-        Find a path from start to goal using the specified algorithm.
         
-        Args:
-            algorithm: 'bfs', 'ucs', or 'astar'
-            heuristic: 'manhattan' or 'euclidean' (for A* only)
+        #Find a path from start to goal using the specified algorithm.
         
-        Returns:
-            path: List of (row, col) tuples forming the path
-            cost: Total path cost
-            expanded: Number of nodes expanded during search
-        """
         print(f"\n🔍 Running {algorithm.upper()} search...")
         print(f"   Start: {self.env.start}")
         print(f"   Goal: {self.env.goal}")
@@ -66,9 +39,9 @@ class SearchAgent:
         return path, cost, expanded
     
     def move_along_path(self):
-        """
-        Move the agent along the computed path (for visualization).
-        """
+        
+        # Move the agent along the computed path (for visualization).
+        
         if not self.path:
             print("No path to follow!")
             return
