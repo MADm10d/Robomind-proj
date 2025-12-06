@@ -39,25 +39,28 @@ class SearchAgent:
         return path, cost, expanded
     
     def move_along_path(self):
-        
         # Move the agent along the computed path (for visualization).
-        
         if not self.path:
             print("No path to follow!")
             return
         
         print(f"\n🤖 Moving along path ({len(self.path)} steps)...")
         
+        self.env.agent_pos = self.env.start
+        self.env.render() 
+        
         for i, pos in enumerate(self.path):
             self.env.agent_pos = pos
             self.env.visited.add(pos)
             self.env.render()
             
-            # Check if reached goal
+            pygame.event.pump() 
+            
+            time.sleep(0.3) 
+            
             if self.env.is_goal(pos):
                 print(f"✓ Goal reached at step {i+1}!")
                 break
-
 
 # Example usage and testing
 if __name__ == "__main__":
@@ -78,6 +81,8 @@ if __name__ == "__main__":
     
     env.start = (0, 0)
     env.goal = (7, 7)
+
+    env.init_display()
     
     # Create agent
     agent = SearchAgent(env)
