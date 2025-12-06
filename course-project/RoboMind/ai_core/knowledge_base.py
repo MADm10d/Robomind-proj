@@ -2,7 +2,7 @@
 Knowledge Base - Logic Reasoning Module
 SE444 - Artificial Intelligence Course Project
 
-TODO: Implement propositional logic knowledge base with inference
+Implemented by: Abdulaziz Altamimi 230714
 Phase 2 (Week 3-4)
 """
 
@@ -33,8 +33,11 @@ class KnowledgeBase:
             >>> kb.tell("Safe(2,3)")
             >>> kb.tell("Free(2,3)")
         """
-        # TODO: Implement
-        self.facts.add(fact)
+
+        if (fact in self.facts): # if the fact already exists in the knowledge base, skip it
+            return
+
+        self.facts.add(fact) # adding the fact into the  facts set for the knowledge base
         print(f"Added fact: {fact}")
     
     def add_rule(self, premises: List[str], conclusion: str):
@@ -49,8 +52,8 @@ class KnowledgeBase:
             >>> kb.add_rule(["Safe(X)", "Free(X)"], "CanMove(X)")
             This means: If Safe(X) AND Free(X) then CanMove(X)
         """
-        # TODO: Implement
-        self.rules.append((premises, conclusion))
+
+        self.rules.append((premises, conclusion)) # adding the premises and conclusion from a rule into the rules array for the knowledge base 
         print(f"Added rule: {' AND '.join(premises)} → {conclusion}")
     
     def ask(self, query: str) -> bool:
@@ -67,9 +70,9 @@ class KnowledgeBase:
             >>> kb.ask("Safe(2,3)")
             True
         """
-        # TODO: Implement proper inference
-        # For now, just check if it's in facts
-        return query in self.facts
+
+        self.infer() # perform inference to derive new facts from the rules before completing the query
+        return query in self.facts # if query exists in the facts set, it will return true
     
     def infer(self):
         """
@@ -88,8 +91,25 @@ class KnowledgeBase:
             >>> kb.ask("CanMove(2,3)")
             True
         """
-        # TODO: Implement forward chaining
-        raise NotImplementedError("Forward chaining not implemented yet!")
+
+        fact_added = True # a variable to 
+        
+        while fact_added: # loop runs as long as new facts are being added to the knowledge base
+            fact_added = False
+            for premises, conclusion in self.rules: # loop through premises and conclusions in the rules array
+                if conclusion in self.facts: # checking if conclusion is already infered and added to knowledge base
+                    continue
+                
+                all_premises_exist = True 
+
+                for i in premises: # loop through each individual premise and checking if it any of them don't exist in the knowledge base
+                    if(i not in self.facts):
+                        all_premises_exist = False
+                        break
+
+                if all_premises_exist: # if all premises are in the knowledge base add the conclusion as a fact in the knowledge base    
+                    self.facts.add(conclusion)
+                    fact_added = True
     
     def __str__(self) -> str:
         """String representation of KB."""
