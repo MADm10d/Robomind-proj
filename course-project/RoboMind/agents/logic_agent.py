@@ -59,18 +59,25 @@ class LogicAgent:
             for move in possible_moves: # looping through all the valid neighbors
                 neighbor_x, neighbor_y = move # storing the x and y values of the agent's valid neighbor's position
                 
+
                 if self.env.is_goal(move): # if agent has the goal as a neighbor it immediately goes to it 
+                    self.kb.tell(f"Previous({neighbor_x},{neighbor_y},{self.env.agent_pos[0]},{self.env.agent_pos[1]})")
                     self.env.agent_pos = move
                     print("goal achieved")
                     return
             
             for move in possible_moves: # looping through all the valid neighbors
                 neighbor_x, neighbor_y = move # storing the x and y values of the agent's valid neighbor's position
-
+                
                 if not self.kb.ask(f"Visited({neighbor_x},{neighbor_y})"): # if the agent hasn't visited the neighbor it moves there 
+                    self.kb.tell(f"Previous({neighbor_x},{neighbor_y},{self.env.agent_pos[0]},{self.env.agent_pos[1]})")
                     self.env.agent_pos = move
                     return
+            
+            for move in possible_moves: # looping through all the valid neighbors
+                neighbor_x, neighbor_y = move # storing the x and y values of the agent's valid neighbor's position
                 
-            if possible_moves: # if the agent has valid neighbors and has visited them and they aren't the goal it backtracks to a random neighbor
-                print("Backtracking")
-                self.env.agent_pos = random.choice(possible_moves)
+                if self.kb.ask(f"Previous({self.env.agent_pos[0]},{self.env.agent_pos[1]},{neighbor_x},{neighbor_y})"): # if the agent has valid neighbors and has visited them and they aren't the goal it backtracks to the previous move
+                    print("Backtracking")
+                    self.env.agent_pos = move
+           
