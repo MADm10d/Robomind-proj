@@ -278,8 +278,139 @@ def test_hybrid():
         print("Please implement agents/hybrid_agent.py")
         return
     
-    print("Hybrid agent testing coming soon...")
-    print("This will test integration of all reasoning techniques.")
+    # 1. Setup the Visual Environment
+    # We use 10x10 because that's the size of the demo map
+    print("Loading Professor's Demo Map...")
+    env = GridWorld(width=10, height=10, cell_size=60) 
+    env.init_display() # Opens the Pygame window
+    
+    # --- REPLICATING THE DEMO MAP ---
+    # These match the black walls from the screenshot.
+    # We treat them as PITS (they emit breezes).
+    env.add_obstacle(2, 2)
+    env.add_obstacle(2, 3)
+    env.add_obstacle(2, 4)
+    env.add_obstacle(5, 5)
+    env.add_obstacle(6, 5)
+    env.add_obstacle(7, 5)
+    
+    # Set Start (Green) and Goal (Red)
+    env.start = (1, 1)
+    env.goal = (8, 8)
+    env.agent_pos = env.start
+    
+    
+    # --- 2. Create the Hybrid Agent ---
+    print("Initializing Hybrid Agent...")
+    agent = HybridAgent(env)
+    
+    print(f"Start: {env.start} -> Goal: {env.goal}")
+    print("Agent is thinking...\n")
+    print("-" * 80)
+    print(f"{'Step':<6} {'Position':<15} {'Strategy Used':<25} {'Next Move':<15} {'Action':<20}")
+    print("-" * 80)
+    
+    # --- 3. Run the Simulation Loop ---
+    running = True
+    steps = 0
+    max_steps = 100
+    strategy_count = {
+        'Search': 0,
+        'Probability': 0,
+        'Logic': 0,
+        'Stuck': 0
+    }
+    
+    while running and steps < max_steps:
+        # Handle Pygame events
+        if not env.handle_events():
+            print("\nSimulation stopped by user.")
+            break
+        
+        current_pos = env.agent_pos
+        
+        # Check Success
+        if env.is_goal(current_pos):
+            print("-" * 80)
+            print(f"\n🎉 SUCCESS! Agent reached the goal at {current_pos}!")
+            break
+        
+        # Check for Death (stepped on obstacle)
+        r, c = current_pos
+        if env.grid[r][c] == 1:
+            print("-" * 80)
+            print(f"\n💀 GAME OVER: Agent fell into a pit at {current_pos}!")
+            break
+        
+        # --- Run the Agent Decision Cycle ---
+        prev_pos = env.agent_pos
+        
+        # The AI Brain Cycle (Sense → Think → Act)
+        agent.perceive()   # 1. Update beliefs/KB with sensors
+        agent.reason()     # 2. Run inference
+        next_move = agent.act()  # 3. Decide and move
+        
+        # Determine which strategy was used
+        strategy_used = "Unknown"
+        
+        if next_move == prev_pos:
+            strategy_used = "Stuck ⚠️"
+            strategy_count['Stuck'] += 1
+        else:
+            # Check which strategy succeeded
+            path, _, _ = agent.plan()
+            if path and len(path) > 1 and next_move == path[1]:
+                strategy_used = "🔍 Search (A*)"
+                strategy_count['Search'] += 1
+            else:
+                belief_prob = agent.beliefs.get(next_move, 0.2)
+                if belief_prob < 0.4:
+                    strategy_used = "📊 Probability (Bayes)"
+                    strategy_count['Probability'] += 1
+                else:
+                    nr, nc = next_move
+                    if agent.kb.ask(f"CanMove({nr},{nc})"):
+                        strategy_used = "⚙️ Logic (KB)"
+                        strategy_count['Logic'] += 1
+                    else:
+                        strategy_used = "📊 Probability (Bayes)"
+                        strategy_count['Probability'] += 1
+        
+        # Print step information
+        action = 'Moved' if next_move != prev_pos else 'Stayed'
+        print(f"{steps+1:<6} {str(current_pos):<15} {strategy_used:<25} {str(next_move):<15} {action:<20}")
+        
+        steps += 1
+        
+        # Draw the world
+        env.render()
+        
+        # Delay so we can watch the agent move
+        time.sleep(0.5)
+    
+    # --- 4. Print Summary Statistics ---
+    print("-" * 80)
+    print("\n📊 HYBRID AGENT STATISTICS:")
+    print("-" * 80)
+    print(f"Total Steps: {steps}")
+    print(f"Final Position: {env.agent_pos}")
+    print(f"Goal Position: {env.goal}")
+    print(f"\nStrategy Usage:")
+    print(f"  🔍 Search (A*):        {strategy_count['Search']:<6} times")
+    print(f"  📊 Probability (Bayes): {strategy_count['Probability']:<6} times")
+    print(f"  ⚙️  Logic (KB):         {strategy_count['Logic']:<6} times")
+    print(f"  ⚠️  Stuck:             {strategy_count['Stuck']:<6} times")
+    print("-" * 80)
+    
+    if env.is_goal(env.agent_pos):
+        print("✅ Test Result: SUCCESS")
+    elif steps >= max_steps:
+        print("⏱️  Test Result: TIMEOUT (exceeded max steps)")
+    else:
+        print("❌ Test Result: FAILED (agent died or stuck)")
+    
+    time.sleep(2)
+    env.close()
 
 
 def run_experiments():

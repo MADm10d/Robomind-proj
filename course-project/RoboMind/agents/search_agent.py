@@ -1,3 +1,10 @@
+"""
+Search Agent - RoboMind Project
+SE444 - Artificial Intelligence Course Project
+
+Implemented by: Mohammed Al-deri 
+Phase 1 of the project (Week 1-2)
+"""
 
 from environment import GridWorld
 from typing import Tuple, List, Optional
@@ -6,7 +13,7 @@ from ai_core.search_algorithms import bfs, ucs, astar
 
 class SearchAgent:
 
-     # Initialize the search agent.
+    # Initialize the search agent.
     def __init__(self, environment: GridWorld):
         
         self.env = environment
