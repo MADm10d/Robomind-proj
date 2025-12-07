@@ -191,7 +191,7 @@ class HybridAgent:
             self.kb.tell(f"Previous({best_move[0]},{best_move[1]},{curr[0]},{curr[1]})")
             self.env.agent_pos = best_move
             self.kb.tell(f"At({best_move[0]},{best_move[1]})")
-            print(f"[Probabilistic Agent] move->{best_move} p={self.beliefs.get(best_move, 0.2):.2f} d={manhattan(best_move, goal)} v={self.visit_counts.get(best_move, 0)}")
+            print(f"[Probabilistic Agent] move->{best_move} prob={self.beliefs.get(best_move, 0.2):.2f} dist={manhattan(best_move, goal)} visits={self.visit_counts.get(best_move, 0)}")
             print("")
             return
 

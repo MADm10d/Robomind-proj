@@ -74,6 +74,10 @@ def test_search():
     print(f"Goal: {env.goal}")
     print(f"Obstacles: {(env.grid == 1).sum()}\n")
     
+    env.init_display()
+    env.render()
+
+
     # Create agent
     agent = SearchAgent(env)
     
@@ -92,6 +96,10 @@ def test_search():
                 'success': path is not None
             }
             print(f"  ✓ Path found! Length: {len(path)}, Cost: {cost}, Expanded: {expanded}")
+            # Show path on the grid
+            env.path = path or []
+            env.render()
+            time.sleep(1)
         except NotImplementedError:
             print(f"  ⚠️  {algo.upper()} not implemented yet")
             results[algo] = {'success': False}
@@ -103,6 +111,9 @@ def test_search():
     print("\n" + "-" * 60)
     print("SUMMARY:")
     print("-" * 60)
+    # Keep window visible briefly then close
+    time.sleep(2)
+    env.close()
     print(f"{'Algorithm':<12} {'Success':<10} {'Path Length':<12} {'Nodes Expanded':<15}")
     print("-" * 60)
     for algo, result in results.items():
