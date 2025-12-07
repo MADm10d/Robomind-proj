@@ -92,7 +92,7 @@ class KnowledgeBase:
             True
         """
 
-        fact_added = True # a variable to 
+        fact_added = True # a variable to track if new facts are being added 
         
         while fact_added: # loop runs as long as new facts are being added to the knowledge base
             fact_added = False
@@ -154,4 +154,3 @@ if __name__ == "__main__":
     
     print(f"\n{kb}")
     print("\n💡 Tip: Implement forward chaining to automatically derive new facts!")
-

@@ -23,25 +23,23 @@ class LogicAgent:
         for x in range(self.env.width): # loops through all the x's in the grid 
             for y in range(self.env.height): # loops through all the y's in the grid
                 self.kb.add_rule([f"Safe({x},{y})", f"Free({x},{y})"], f"CanMove({x},{y})") # forms the rule using each x and y combination
-
+                self.kb.add_rule([f"At({x},{y})", f"Safe({x},{y})"], f"Visited({x},{y})") # adding the visited fact of the agent's position to the knowledge base
         
     def perceive(self):
         """Perceive the environment and update knowledge base."""
 
         pos_x, pos_y = self.env.agent_pos # storing the x and y values of the agent's position 
           
-
         if self.env.is_valid((pos_x,pos_y)): # checking if position is valid
             self.kb.tell(f"At({pos_x},{pos_y})") # adding the at fact of the agent's position to the knowledge base
-            self.kb.tell(f"Visited({pos_x},{pos_y})") # adding the visited fact of the agent's position to the knowledge base
             self.kb.tell(f"Safe({pos_x},{pos_y})") # adding the safe fact of the agent's position to the knowledge base
-
-            for i in self.env.get_neighbors((pos_x,pos_y)): # looping through the neighbors of the agent's position
-                neighbor_x = i[0] # neighbor's x position
-                neighbor_y = i[1] # neighbor's y position
-                self.kb.tell(f"Safe({neighbor_x},{neighbor_y})") # adding the safe fact of the agent's neighbor's position to the knowledge base
-                self.kb.tell(f"Free({neighbor_x},{neighbor_y})") # adding the free fact of the agent's neighbor's position to the knowledge base
-                
+            if not self.env.is_goal((pos_x,pos_y)): # if the agent is not at goal position it adds the agent's neighbors facts to the knowledge base
+                for i in self.env.get_neighbors((pos_x,pos_y)): # looping through the neighbors of the agent's position
+                    neighbor_x = i[0] # neighbor's x position
+                    neighbor_y = i[1] # neighbor's y position
+                    self.kb.tell(f"Safe({neighbor_x},{neighbor_y})") # adding the safe fact of the agent's neighbor's position to the knowledge base
+                    self.kb.tell(f"Free({neighbor_x},{neighbor_y})") # adding the free fact of the agent's neighbor's position to the knowledge base
+                    #self.kb.tell(f"Adjacent({pos_x},{pos_y},{neighbor_x},{neighbor_y})") # adding the adjacent fact between the agent's position and its neighbor's position to the knowledge base    
             return
     
     def reason(self):
@@ -61,7 +59,6 @@ class LogicAgent:
                 
 
                 if self.env.is_goal(move): # if agent has the goal as a neighbor it immediately goes to it 
-                    self.kb.tell(f"Previous({neighbor_x},{neighbor_y},{self.env.agent_pos[0]},{self.env.agent_pos[1]})")
                     self.env.agent_pos = move
                     print("goal achieved")
                     return
@@ -81,4 +78,3 @@ class LogicAgent:
                     print("Backtracking")
                     self.env.agent_pos = move
                     return
-        
