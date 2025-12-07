@@ -10,6 +10,7 @@ from environment import GridWorld
 from agents.search_agent import SearchAgent
 from ai_core.knowledge_base import KnowledgeBase
 from ai_core.bayes_reasoning import update_belief_map
+import random
 
 
 
@@ -24,6 +25,7 @@ class HybridAgent:
         
         # Search component
         self.search_agent = SearchAgent(environment)
+        self.search_agent.verbose = False
         
         # Logic component
         self.kb = KnowledgeBase()
@@ -31,6 +33,7 @@ class HybridAgent:
         for x in range(self.env.width): # loops through all the x's in the grid 
             for y in range(self.env.height): # loops through all the y's in the grid
                 self.kb.add_rule([f"Safe({x},{y})", f"Free({x},{y})"], f"CanMove({x},{y})") # forms the rule using each x and y combination
+                self.kb.add_rule([f"At({x},{y})", f"Safe({x},{y})"], f"Visited({x},{y})")
                 
         
 
@@ -114,14 +117,112 @@ class HybridAgent:
             2. If uncertain about obstacles → use probability
             3. If need to infer hidden info → use logic
         """
+        # 1) Sense → Update Beliefs → Reason
         curr = self.env.agent_pos # getting the current position of the agent
         percepts = self.perceive() # start the perception
-        self.update_beliefs(percepts["breeze"]) # update the beliefs
-        self.reason() # reason by the logic 
-        path, cost, expanded = self.plan() # planning with the search 
+        self.update_beliefs(percepts["breeze"]) # update the beliefs using Bayes
+        self.reason() # reason by the logic (facts + rules → inference)
+        self.kb.tell(f"At({curr[0]},{curr[1]})") # track current location as a fact
+        path, cost, expanded = self.plan() # planning with the search (A*)
 
-    
+        # 2) Try using the planned path if the next step is safe 
+        # We gate following A* by a safety threshold derived from beliefs.
+        SAFE_THRESHOLD = 0.4
+        next_step = None
+        if path:
+            # If path exists, take the immediate next cell (or current if single node)
+            next_step = path[1] if len(path) > 1 else path[0]
+        # Move by search only if it's a real progress, valid, and sufficiently safe
+        if next_step and next_step != curr and self.env.is_valid(next_step) and self.beliefs.get(next_step, 0.2) < SAFE_THRESHOLD:
+            self.env.agent_pos = next_step
+            self.visit_counts[next_step] = self.visit_counts.get(next_step, 0) + 1
+            self.visited.add(next_step)
+            self.kb.tell(f"At({next_step[0]},{next_step[1]})")
+            print(f"[Search Agent] move->{next_step} p={self.beliefs.get(next_step, 0.2):.2f}")
+            print("")
+            return
 
+        # If search could not proceed, record the reason and fall back to probability
+        failure_reason = None
+        if not path:
+            failure_reason = "no path"
+        elif not next_step or next_step == curr:
+            failure_reason = "no progress"
+        elif not self.env.is_valid(next_step):
+            failure_reason = "blocked"
+        elif self.beliefs.get(next_step, 0.2) >= SAFE_THRESHOLD:
+            failure_reason = f"unsafe p={self.beliefs.get(next_step, 0.2):.2f}≥{SAFE_THRESHOLD}"
+        if failure_reason:
+            print(f"[Search Agent] fail: {failure_reason}; trying probability")
+        
+        # 3) Probabilistic fallback 
+        # Consider only unvisited neighbors to avoid loops and choose the best
+        # according to risk + proximity + revisit penalty.
+        neighbors = [n for n in self.env.get_neighbors(curr) if n not in self.visited]
+        random.shuffle(neighbors)
+        safe_moves = []
+        risky_moves = []
+        for n in neighbors:
+            p = self.beliefs.get(n, 0.2)
+            if p < SAFE_THRESHOLD:
+                safe_moves.append(n)
+            else:
+                risky_moves.append((n, p))
+
+        def manhattan(a, b):
+            return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
+        goal = self.env.goal
+
+        # Score combines distance to goal and revisit penalty; lower is better
+        def score(move):
+            return manhattan(move, goal) + (self.visit_counts.get(move, 0) * 5)
+
+        best_move = None
+        if safe_moves:
+            best_move = min(safe_moves, key=score)
+        elif risky_moves:
+            best_move = min(risky_moves, key=lambda x: x[1])[0]
+
+        # If probability suggests a real move, perform it and update KB
+        if best_move and best_move != curr:
+            self.visit_counts[best_move] = self.visit_counts.get(best_move, 0) + 1
+            self.visited.add(best_move)
+            self.kb.tell(f"Previous({best_move[0]},{best_move[1]},{curr[0]},{curr[1]})")
+            self.env.agent_pos = best_move
+            self.kb.tell(f"At({best_move[0]},{best_move[1]})")
+            print(f"[Probabilistic Agent] move->{best_move} p={self.beliefs.get(best_move, 0.2):.2f} d={manhattan(best_move, goal)} v={self.visit_counts.get(best_move, 0)}")
+            print("")
+            return
+
+        # If probability cannot help, use logic for goal, inferred safe moves, or backtracking
+        if not safe_moves and not risky_moves:
+            print("[Probabilistic Agent] fail: no unvisited neighbors; trying logic")
+        possible_moves = self.env.get_neighbors(self.env.agent_pos)
+        for move in possible_moves:
+            if self.env.is_goal(move):
+                self.kb.tell(f"Previous({move[0]},{move[1]},{self.env.agent_pos[0]},{self.env.agent_pos[1]})")
+                self.env.agent_pos = move
+                print(f"[Logic] goal->{move}")
+                print("")
+                return
+
+        for move in possible_moves:
+            nx, ny = move
+            if not self.kb.ask(f"Visited({nx},{ny})") and self.kb.ask(f"CanMove({nx},{ny})"):
+                self.kb.tell(f"Previous({nx},{ny},{self.env.agent_pos[0]},{self.env.agent_pos[1]})")
+                self.env.agent_pos = move
+                print(f"[Logical Agent] infer->{(nx, ny)}")
+                print("")
+                return
+
+        for move in possible_moves:
+            nx, ny = move
+            if self.kb.ask(f"Previous({self.env.agent_pos[0]},{self.env.agent_pos[1]},{nx},{ny})"):
+                self.env.agent_pos = move
+                print(f"[Logical Agent] backtrack->{(nx, ny)}")
+                print("")
+                return
 
     # helper method
     def sense_breeze(self, pos):
@@ -146,4 +247,3 @@ class HybridAgent:
 if __name__ == "__main__":
     print("Hybrid Agent - combines Search + Logic + Probability")
     print("This is the final phase - integrate everything!")
-

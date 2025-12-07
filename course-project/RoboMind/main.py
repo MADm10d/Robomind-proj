@@ -278,140 +278,135 @@ def test_hybrid():
         print("Please implement agents/hybrid_agent.py")
         return
     
-    # 1. Setup the Visual Environment
-    # We use 10x10 because that's the size of the demo map
-    print("Loading Professor's Demo Map...")
-    env = GridWorld(width=10, height=10, cell_size=60) 
-    env.init_display() # Opens the Pygame window
+    # 1) Setup a static maze (same layout as probability demo)
+    env = GridWorld(width=10, height=10, cell_size=60)
+    env.init_display()
+    try:
+        choice = input("Select hybrid maze difficulty (e/m/h) [h]: ").strip().lower()
+    except Exception:
+        choice = ""
+    maze = 'hard'
+    if choice in ('easy','e','1'):
+        maze = 'easy'
+    elif choice in ('medium','m','2'):
+        maze = 'medium'
     
-    # --- REPLICATING THE DEMO MAP ---
-    # These match the black walls from the screenshot.
-    # We treat them as PITS (they emit breezes).
-    env.add_obstacle(2, 2)
-    env.add_obstacle(2, 3)
-    env.add_obstacle(2, 4)
-    env.add_obstacle(5, 5)
-    env.add_obstacle(6, 5)
-    env.add_obstacle(7, 5)
+    if maze == 'easy':
+        pass # very easy just to show how agent follow A*
     
-    # Set Start (Green) and Goal (Red)
+    elif maze == 'medium': # medium to show search + probabilty usage
+        env.add_obstacle(2, 2)
+        env.add_obstacle(2, 3)
+        env.add_obstacle(2, 4)
+        env.add_obstacle(5, 5)
+        env.add_obstacle(6, 5)
+        env.add_obstacle(7, 5)
+        env.add_obstacle(8, 9)
+        env.add_obstacle(9, 8)
+
+        
+    
+    else: # very hard to show hybrid needing logic
+        env.add_obstacle(0, 2)
+        env.add_obstacle(0, 3)
+        env.add_obstacle(0, 4)
+        env.add_obstacle(0, 5)
+        env.add_obstacle(0, 6)
+        env.add_obstacle(0, 7)
+
+        env.add_obstacle(0, 1)
+        env.add_obstacle(1, 0)
+
+        env.add_obstacle(2, 2)
+        env.add_obstacle(2, 3)
+        env.add_obstacle(2, 4)
+        env.add_obstacle(2, 5)
+        env.add_obstacle(2, 6)
+
+        env.add_obstacle(3, 6)
+        env.add_obstacle(4, 6)
+        env.add_obstacle(5, 6)
+        env.add_obstacle(6, 6)
+
+        env.add_obstacle(3, 8)
+        env.add_obstacle(5, 8)
+        env.add_obstacle(6, 8)
+        env.add_obstacle(7, 8)
+
+        env.add_obstacle(4, 9)
+
+        env.add_obstacle(7, 5)
+        env.add_obstacle(1, 9)
+        env.add_obstacle(3, 9)
+        env.add_obstacle(9, 3)
+
+        env.add_obstacle(3, 4)
+        env.add_obstacle(4, 4)
+        env.add_obstacle(5, 4)
+        env.add_obstacle(6, 4)
+        env.add_obstacle(7, 4)
+
+        env.add_obstacle(7, 1)
+        env.add_obstacle(8, 1)
+        env.add_obstacle(9, 2)
+    
+    # Start/Goal
     env.start = (1, 1)
     env.goal = (8, 8)
     env.agent_pos = env.start
     
-    
-    # --- 2. Create the Hybrid Agent ---
-    print("Initializing Hybrid Agent...")
+    # 2) Create Hybrid Agent
     agent = HybridAgent(env)
-    
     print(f"Start: {env.start} -> Goal: {env.goal}")
-    print("Agent is thinking...\n")
-    print("-" * 80)
-    print(f"{'Step':<6} {'Position':<15} {'Strategy Used':<25} {'Next Move':<15} {'Action':<20}")
-    print("-" * 80)
+    print("Hybrid agent integrating search + probability + logic")
     
-    # --- 3. Run the Simulation Loop ---
-    running = True
+    # 3) Simulation loop
     steps = 0
-    max_steps = 100
-    strategy_count = {
-        'Search': 0,
-        'Probability': 0,
-        'Logic': 0,
-        'Stuck': 0
-    }
-    
+    max_steps = 80
+    running = True
     while running and steps < max_steps:
-        # Handle Pygame events
         if not env.handle_events():
-            print("\nSimulation stopped by user.")
+            print("Simulation stopped by user.")
             break
         
-        current_pos = env.agent_pos
+        # Visualize
+        env.render()
+        curr = env.agent_pos
         
-        # Check Success
-        if env.is_goal(current_pos):
-            print("-" * 80)
-            print(f"\n🎉 SUCCESS! Agent reached the goal at {current_pos}!")
+        # Goal check
+        if env.is_goal(curr):
+            print("\n🎉 SUCCESS! Hybrid agent reached the goal.")
             break
         
-        # Check for Death (stepped on obstacle)
-        r, c = current_pos
+        # Perception status
+        has_breeze = agent.sense_breeze(curr)
+        sensor_msg = "🌬️ BREEZE!" if has_breeze else "⚪ Clear"
+        print(f"Step {steps+1}: {curr} | Sensor: {sensor_msg}")
+        
+        # Act (agent updates env.agent_pos internally)
+        try:
+            agent.act()
+        except Exception as e:
+            print(f"❌ Error during hybrid act: {e}")
+            import traceback
+            traceback.print_exc()
+            break
+        
+        # Optional: mark visited for UI tint
+        env.visited.add(env.agent_pos)
+        
+        # Death check
+        r, c = env.agent_pos
         if env.grid[r][c] == 1:
-            print("-" * 80)
-            print(f"\n💀 GAME OVER: Agent fell into a pit at {current_pos}!")
+            print("\n💀 GAME OVER: Agent fell into a pit!")
             break
-        
-        # --- Run the Agent Decision Cycle ---
-        prev_pos = env.agent_pos
-        
-        # The AI Brain Cycle (Sense → Think → Act)
-        agent.perceive()   # 1. Update beliefs/KB with sensors
-        agent.reason()     # 2. Run inference
-        next_move = agent.act()  # 3. Decide and move
-        
-        # Determine which strategy was used
-        strategy_used = "Unknown"
-        
-        if next_move == prev_pos:
-            strategy_used = "Stuck ⚠️"
-            strategy_count['Stuck'] += 1
-        else:
-            # Check which strategy succeeded
-            path, _, _ = agent.plan()
-            if path and len(path) > 1 and next_move == path[1]:
-                strategy_used = "🔍 Search (A*)"
-                strategy_count['Search'] += 1
-            else:
-                belief_prob = agent.beliefs.get(next_move, 0.2)
-                if belief_prob < 0.4:
-                    strategy_used = "📊 Probability (Bayes)"
-                    strategy_count['Probability'] += 1
-                else:
-                    nr, nc = next_move
-                    if agent.kb.ask(f"CanMove({nr},{nc})"):
-                        strategy_used = "⚙️ Logic (KB)"
-                        strategy_count['Logic'] += 1
-                    else:
-                        strategy_used = "📊 Probability (Bayes)"
-                        strategy_count['Probability'] += 1
-        
-        # Print step information
-        action = 'Moved' if next_move != prev_pos else 'Stayed'
-        print(f"{steps+1:<6} {str(current_pos):<15} {strategy_used:<25} {str(next_move):<15} {action:<20}")
         
         steps += 1
-        
-        # Draw the world
-        env.render()
-        
-        # Delay so we can watch the agent move
-        time.sleep(0.5)
+        time.sleep(0.4)
     
-    # --- 4. Print Summary Statistics ---
-    print("-" * 80)
-    print("\n📊 HYBRID AGENT STATISTICS:")
-    print("-" * 80)
-    print(f"Total Steps: {steps}")
-    print(f"Final Position: {env.agent_pos}")
-    print(f"Goal Position: {env.goal}")
-    print(f"\nStrategy Usage:")
-    print(f"  🔍 Search (A*):        {strategy_count['Search']:<6} times")
-    print(f"  📊 Probability (Bayes): {strategy_count['Probability']:<6} times")
-    print(f"  ⚙️  Logic (KB):         {strategy_count['Logic']:<6} times")
-    print(f"  ⚠️  Stuck:             {strategy_count['Stuck']:<6} times")
-    print("-" * 80)
-    
-    if env.is_goal(env.agent_pos):
-        print("✅ Test Result: SUCCESS")
-    elif steps >= max_steps:
-        print("⏱️  Test Result: TIMEOUT (exceeded max steps)")
-    else:
-        print("❌ Test Result: FAILED (agent died or stuck)")
-    
+    # Keep window visible for a moment
     time.sleep(2)
     env.close()
-
 
 def run_experiments():
     """Run comprehensive experiments."""

@@ -20,6 +20,9 @@ class KnowledgeBase:
         """Initialize empty knowledge base."""
         self.facts = set()   # Known facts: "Safe(2,3)", "Obstacle(4,5)"
         self.rules = []      # Rules: ("A", "B", "C") means "A AND B → C"
+        self.verbose = False
+        self.verbose = False
+        self.verbose = False
     
     def tell(self, fact: str):
         """
@@ -38,7 +41,8 @@ class KnowledgeBase:
             return
 
         self.facts.add(fact) # adding the fact into the  facts set for the knowledge base
-        print(f"Added fact: {fact}")
+        if self.verbose:
+            print(f"Added fact: {fact}")
     
     def add_rule(self, premises: List[str], conclusion: str):
         """
@@ -54,7 +58,8 @@ class KnowledgeBase:
         """
 
         self.rules.append((premises, conclusion)) # adding the premises and conclusion from a rule into the rules array for the knowledge base 
-        print(f"Added rule: {' AND '.join(premises)} → {conclusion}")
+        if self.verbose:
+            print(f"Added rule: {' AND '.join(premises)} → {conclusion}")
     
     def ask(self, query: str) -> bool:
         """

@@ -19,22 +19,24 @@ class SearchAgent:
         self.env = environment
         self.path = []
         self.current_pos = environment.start
+        self.verbose = True
     
     def search(self, algorithm='bfs', heuristic='manhattan') -> Tuple[Optional[List], float, int]:
         
         #Find a path from start to goal using the specified algorithm.
         
-        print(f"\n🔍 Running {algorithm.upper()} search...")
-        print(f"   Start: {self.env.start}")
-        print(f"   Goal: {self.env.goal}")
+        if self.verbose:
+            print(f"\n🔍 Running {algorithm.upper()} search...")
+            print(f"   Start: {self.env.agent_pos}")
+            print(f"   Goal: {self.env.goal}")
         
-        # Call the appropriate search algorithm
+        current_start = self.env.agent_pos
         if algorithm == 'bfs':
-            path, cost, expanded = bfs(self.env, self.env.start, self.env.goal)
+            path, cost, expanded = bfs(self.env, current_start, self.env.goal)
         elif algorithm == 'ucs':
-            path, cost, expanded = ucs(self.env, self.env.start, self.env.goal)
+            path, cost, expanded = ucs(self.env, current_start, self.env.goal)
         elif algorithm == 'astar':
-            path, cost, expanded = astar(self.env, self.env.start, self.env.goal, heuristic)
+            path, cost, expanded = astar(self.env, current_start, self.env.goal, heuristic)
         else:
             raise ValueError(f"Unknown algorithm: {algorithm}")
 
