@@ -57,7 +57,6 @@ class LogicAgent:
             for move in possible_moves: # looping through all the valid neighbors
                 neighbor_x, neighbor_y = move # storing the x and y values of the agent's valid neighbor's position
                 
-
                 if self.env.is_goal(move): # if agent has the goal as a neighbor it immediately goes to it 
                     self.env.agent_pos = move
                     print("goal achieved")
@@ -66,7 +65,7 @@ class LogicAgent:
             for move in possible_moves: # looping through all the valid neighbors
                 neighbor_x, neighbor_y = move # storing the x and y values of the agent's valid neighbor's position
                 
-                if not self.kb.ask(f"Visited({neighbor_x},{neighbor_y})"): # if the agent hasn't visited the neighbor it moves there 
+                if not self.kb.ask(f"Visited({neighbor_x},{neighbor_y})") and self.kb.ask(f"CanMove({neighbor_x},{neighbor_y})"): # if the agent hasn't visited the neighbor it moves there 
                     self.kb.tell(f"Previous({neighbor_x},{neighbor_y},{self.env.agent_pos[0]},{self.env.agent_pos[1]})")
                     self.env.agent_pos = move
                     return
