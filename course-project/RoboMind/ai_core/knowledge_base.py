@@ -34,10 +34,10 @@ class KnowledgeBase:
             >>> kb.tell("Free(2,3)")
         """
 
-        if (fact in self.facts): # if the fact already exists in the knowledge base, skip it
+        if (fact in self.facts): # If the fact already exists in the knowledge base, skip it
             return
 
-        self.facts.add(fact) # adding the fact into the  facts set for the knowledge base
+        self.facts.add(fact) # Adding the fact into the  facts set for the knowledge base
         print(f"Added fact: {fact}")
     
     def add_rule(self, premises: List[str], conclusion: str):
@@ -53,7 +53,7 @@ class KnowledgeBase:
             This means: If Safe(X) AND Free(X) then CanMove(X)
         """
 
-        self.rules.append((premises, conclusion)) # adding the premises and conclusion from a rule into the rules array for the knowledge base 
+        self.rules.append((premises, conclusion)) # Adding the premises and conclusion from a rule into the rules array for the knowledge base 
         print(f"Added rule: {' AND '.join(premises)} → {conclusion}")
     
     def ask(self, query: str) -> bool:
@@ -71,8 +71,8 @@ class KnowledgeBase:
             True
         """
 
-        self.infer() # perform inference to derive new facts from the rules before completing the query
-        return query in self.facts # if query exists in the facts set, it will return true
+        self.infer() # Perform inference to derive new facts from the rules before completing the query
+        return query in self.facts # If query exists in the facts set, it will return true
     
     def infer(self):
         """
@@ -92,22 +92,22 @@ class KnowledgeBase:
             True
         """
 
-        fact_added = True # a variable to track if new facts are being added 
+        fact_added = True # A variable to track if new facts are being added 
         
-        while fact_added: # loop runs as long as new facts are being added to the knowledge base
+        while fact_added: # Loop runs as long as new facts are being added to the knowledge base
             fact_added = False
-            for premises, conclusion in self.rules: # loop through premises and conclusions in the rules array
-                if conclusion in self.facts: # checking if conclusion is already infered and added to knowledge base
+            for premises, conclusion in self.rules: # Loop through premises and conclusions in the rules array
+                if conclusion in self.facts: # Checking if conclusion is already infered and added to knowledge base
                     continue
                 
                 all_premises_exist = True 
 
-                for i in premises: # loop through each individual premise and checking if it any of them don't exist in the knowledge base
+                for i in premises: # Loop through each individual premise and checking if it any of them don't exist in the knowledge base
                     if(i not in self.facts):
                         all_premises_exist = False
                         break
 
-                if all_premises_exist: # if all premises are in the knowledge base add the conclusion as a fact in the knowledge base    
+                if all_premises_exist: # If all premises are in the knowledge base add the conclusion as a fact in the knowledge base    
                     self.facts.add(conclusion)
                     fact_added = True
     

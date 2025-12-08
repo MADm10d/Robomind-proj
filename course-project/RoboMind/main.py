@@ -117,68 +117,53 @@ def test_logic():
     """Test logic-based agent."""
     print_header("Testing Logic Agent")
     
-    if LogicAgent is None:
+    if LogicAgent is None: # If logicagent isn't imported because it wasn't implemented print the following
         print("❌ LogicAgent not implemented yet!")
         print("Please implement agents/logic_agent.py")
         return
     
-    # --- 1. Setup the Environment ---
-    import time
-    # Create a 10x10 world
-    env = GridWorld(width=10, height=10, cell_size=60)
+    env = GridWorld(width=10, height=10, cell_size=60) # Create a 10x10 world
     
-    # Add random obstacles (but keep start/goal clear)
-    env.add_random_obstacles(10) 
-    env.start = (0, 0)
-    env.goal = (9, 9)
-    env.agent_pos = env.start
+    env.add_random_obstacles(10) # Adding random obstacles
+    env.start = (0, 0) # Start position
+    env.goal = (9, 9) # Goal position
+    env.agent_pos = env.start # Initializing agent's position as the start position
     
-    # Initialize Pygame window
-    env.init_display()
+    env.init_display() # Initialize the grid display
     
-    # --- 2. Create the Agent ---
     print("Initializing Logic Agent...")
     try:
-        agent = LogicAgent(env)
+        agent = LogicAgent(env) # Create logicagent object if no exceptions arise
     except Exception as e:
-        print(f"❌ Error initializing agent: {e}")
+        print(f"Error initializing agent: {e}")
         return
 
-    print("Simulation started! Agent is thinking...")
-
-    # --- 3. Run the Simulation Loop ---
-    running = True
+    running = True 
     steps = 0
     
-    while running:
-        # Handle Pygame events (clicking close button, etc.)
-        if not env.handle_events():
+    while running: # If the agent's process is still running and no external events or errors occured, keep looping through the agent's logic
+        if not env.handle_events(): # Handling the pygame events, such as clicking, closing, etc.
             running = False
             break
         
-        # If we haven't reached the goal yet, run the AI cycle
-        if not env.is_goal(env.agent_pos):
+        if not env.is_goal(env.agent_pos): # If we haven't reached the goal yet, run the Logic agent to find the goal
             try:
-                # The AI Brain Cycle
-                agent.perceive()  # 1. Update KB with sensors
-                agent.reason()    # 2. Run inference
-                agent.act()       # 3. Decide and move
+                agent.perceive()  # Update KB with sensors
+                agent.reason()    # Run inference
+                agent.act()       # Decide and move
                 steps += 1
             except Exception as e:
-                print(f"❌ Error during agent execution: {e}")
+                print(f"Error during agent execution: {e}")
                 import traceback
                 traceback.print_exc()
                 running = False
         
-        # Draw the world
-        env.render()
+        env.render() # Rendering the world made
         
-        # Slow down slightly so we can watch it move (0.1s delay)
-        time.sleep(0.3)
+        time.sleep(0.3) # Slow down slightly to watch the agent move
 
-    env.close()
+    env.close() # Close the gridworld
     print(f"\nTest finished. Total steps: {steps}")
-
 
 def test_probability():
     """Test probabilistic agent."""
