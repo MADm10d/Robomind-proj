@@ -121,7 +121,7 @@ class HybridAgent:
         curr = self.env.agent_pos # getting the current position of the agent
         percepts = self.perceive() # start the perception
         self.update_beliefs(percepts["breeze"]) # update the beliefs using Bayes
-        self.reason() # reason by the logic (facts + rules → inference)
+        self.reason() # reason by the logic 
         self.kb.tell(f"At({curr[0]},{curr[1]})") # track current location as a fact
         path, cost, expanded = self.plan() # planning with the search (A*)
 
@@ -196,6 +196,7 @@ class HybridAgent:
             return
 
         # If probability cannot help, use logic for goal, inferred safe moves, or backtracking
+        # mainly when all neighbors are visited and no safe moves
         if not safe_moves and not risky_moves:
             print("[Probabilistic Agent] fail: no unvisited neighbors; trying logic")
         possible_moves = self.env.get_neighbors(self.env.agent_pos)

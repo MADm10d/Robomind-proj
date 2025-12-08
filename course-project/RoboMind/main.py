@@ -422,8 +422,182 @@ def test_hybrid():
 def run_experiments():
     """Run comprehensive experiments."""
     print_header("Running All Experiments")
-    print("This will run comprehensive tests and generate performance reports.")
-    print("Coming soon...")
+    print("Running quick experiments and summary metrics.")
+
+    if SearchAgent is None or LogicAgent is None or ProbabilisticAgent is None or HybridAgent is None:
+        print("One or more agents are not implemented yet.")
+        return
+
+    from collections import defaultdict
+    import contextlib
+    import io
+    trials = 3
+
+    print("\n[Search] BFS/UCS/A* across random grids")
+    search_stats = []
+    for _ in range(trials):
+        env = GridWorld(width=10, height=10, cell_size=50)
+        env.add_random_obstacles(15)
+        env.start = (0, 0)
+        env.goal = (9, 9)
+        env.agent_pos = env.start
+        agent = SearchAgent(env)
+        agent.verbose = False
+        for algo in ['bfs', 'ucs', 'astar']:
+            try:
+                t0 = time.perf_counter()
+                path, cost, expanded = agent.search(algo)
+                dt = time.perf_counter() - t0
+                success = bool(path)
+                plen = len(path) if path else 0
+                search_stats.append((algo, success, plen, cost if success else float('inf'), expanded, dt))
+            except Exception:
+                search_stats.append((algo, False, 0, float('inf'), 0, 0.0))
+
+    agg = defaultdict(lambda: {'runs': 0, 'success': 0, 'len': 0, 'cost_sum': 0.0, 'cost_runs': 0, 'expanded': 0, 'time_sum': 0.0})
+    for algo, success, plen, cost, expanded, dt in search_stats:
+        a = agg[algo]
+        a['runs'] += 1
+        a['success'] += 1 if success else 0
+        a['len'] += plen
+        if success:
+            a['cost_sum'] += cost
+            a['cost_runs'] += 1
+        a['expanded'] += expanded
+        a['time_sum'] += dt
+
+    print(f"{'Algorithm':<12} {'Success%':<10} {'AvgLen':<8} {'AvgCost':<10} {'AvgExpanded':<12} {'AvgTime(ms)':<12}")
+    for algo in ['bfs', 'ucs', 'astar']:
+        a = agg[algo]
+        runs = max(a['runs'], 1)
+        success_pct = (a['success'] / runs) * 100
+        avg_len = a['len'] / runs
+        avg_cost = (a['cost_sum'] / a['cost_runs']) if a['cost_runs'] > 0 else None
+        avg_expanded = a['expanded'] / runs
+        avg_time_ms = (a['time_sum'] / runs) * 1000.0
+        cost_str = f"{avg_cost:.2f}" if avg_cost is not None else "-"
+        print(f"{algo.upper():<12} {success_pct:>7.1f}% {avg_len:>8.1f} {cost_str:>10} {avg_expanded:>12.1f} {avg_time_ms:>12.1f}")
+
+    print("\n[Logic] quick run")
+    try:
+        env = GridWorld(width=10, height=10, cell_size=50)
+        env.add_random_obstacles(10)
+        env.start = (0, 0)
+        env.goal = (9, 9)
+        env.agent_pos = env.start
+        agent = LogicAgent(env)
+        agent.verbose = False
+        steps = 0
+        max_steps = 60
+        logic_expanded = 0
+        t0 = time.perf_counter()
+        while steps < max_steps and not env.is_goal(env.agent_pos):
+            agent.perceive()
+            pre = len(agent.kb.facts)
+            agent.reason()
+            logic_expanded += max(len(agent.kb.facts) - pre, 0)
+            agent.act()
+            steps += 1
+        logic_success = env.is_goal(env.agent_pos)
+        logic_steps = steps
+        logic_time = time.perf_counter() - t0
+        print(f"Result: {'Reached goal' if logic_success else 'Failed'} in {logic_steps} steps")
+    except Exception as e:
+        print(f"Error: {e}")
+        logic_success = False
+        logic_steps = 0
+        logic_time = 0.0
+        logic_expanded = 0
+
+    print("\n[Probability] quick run")
+    try:
+        env = GridWorld(width=10, height=10, cell_size=50)
+        env.add_obstacle(2, 2)
+        env.add_obstacle(2, 3)
+        env.add_obstacle(2, 4)
+        env.add_obstacle(5, 5)
+        env.add_obstacle(6, 5)
+        env.add_obstacle(7, 5)
+        env.start = (1, 1)
+        env.goal = (8, 8)
+        env.agent_pos = env.start
+        agent = ProbabilisticAgent(env)
+        steps = 0
+        max_steps = 60
+        prob_expanded = 0
+        t0 = time.perf_counter()
+        while steps < max_steps and not env.is_goal(env.agent_pos):
+            pos = env.agent_pos
+            is_breeze = agent.sense_breeze(pos)
+            r, c = pos
+            neigh = [(r+1, c), (r-1, c), (r, c+1), (r, c-1)]
+            before_vals = {n: agent.beliefs.get(n) for n in neigh if n in agent.beliefs}
+            agent.update_beliefs(is_breeze, pos)
+            after_vals = {n: agent.beliefs.get(n) for n in neigh if n in agent.beliefs}
+            prob_expanded += sum(1 for n in after_vals if after_vals[n] != before_vals.get(n))
+            next_move = agent.act()
+            if next_move:
+                env.agent_pos = next_move
+            steps += 1
+        prob_success = env.is_goal(env.agent_pos)
+        prob_steps = steps
+        prob_time = time.perf_counter() - t0
+        print(f"Result: {'Reached goal' if prob_success else 'Failed'} in {prob_steps} steps")
+    except Exception as e:
+        print(f"Error: {e}")
+        prob_success = False
+        prob_steps = 0
+        prob_time = 0.0
+        prob_expanded = 0
+
+    print("\n[Hybrid] quick run")
+    try:
+        env = GridWorld(width=10, height=10, cell_size=50)
+        env.add_obstacle(0, 2)
+        env.add_obstacle(0, 3)
+        env.add_obstacle(2, 2)
+        env.add_obstacle(2, 3)
+        env.add_obstacle(2, 4)
+        env.add_obstacle(6, 6)
+        env.add_obstacle(7, 5)
+        env.start = (1, 1)
+        env.goal = (8, 8)
+        env.agent_pos = env.start
+        agent = HybridAgent(env)
+        steps = 0
+        max_steps = 80
+        t0 = time.perf_counter()
+        hybrid_expanded = 0
+        original_plan = agent.plan
+        def wrapped_plan():
+            p, c, ex = original_plan()
+            nonlocal hybrid_expanded
+            hybrid_expanded += ex
+            return p, c, ex
+        agent.plan = wrapped_plan
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            while steps < max_steps and not env.is_goal(env.agent_pos):
+                agent.act()
+                steps += 1
+        hybrid_success = env.is_goal(env.agent_pos)
+        hybrid_steps = steps
+        hybrid_time = time.perf_counter() - t0
+        print(f"Result: {'Reached goal' if hybrid_success else 'Failed'} in {hybrid_steps} steps")
+    except Exception as e:
+        print(f"Error: {e}")
+        hybrid_success = False
+        hybrid_steps = 0
+        hybrid_time = 0.0
+
+    print("\nSUMMARY (Quick Runs)")
+    print(f"{'Agent':<14} {'Success':<8} {'Steps':<6} {'Time(ms)':<10} {'Expanded':<9}")
+    def row(name, success, steps, time_s, expanded):
+        time_ms = time_s * 1000.0
+        print(f"{name:<14} {('✓' if success else '✗'):<8} {steps:<6} {time_ms:>10.1f} {str(expanded):>9}")
+    row('Logic', logic_success, logic_steps, logic_time, logic_expanded)
+    row('Probability', prob_success, prob_steps, prob_time, prob_expanded)
+    row('Hybrid', hybrid_success, hybrid_steps, hybrid_time, hybrid_expanded)
 
 
 def main():
