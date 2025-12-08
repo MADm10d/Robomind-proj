@@ -109,6 +109,7 @@ class KnowledgeBase:
 
                 if all_premises_exist: # If all premises are in the knowledge base add the conclusion as a fact in the knowledge base    
                     self.facts.add(conclusion)
+                    print(f"Added fact: {conclusion}")
                     fact_added = True
     
     def __str__(self) -> str:

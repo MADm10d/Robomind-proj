@@ -46,6 +46,7 @@ class LogicAgent:
         """Use logic inference to make decisions."""
 
         self.kb.infer() # Calling the infer method from kb to make the reasoning 
+        print(f"\n{self.kb}")
     
     def act(self):
         """Decide and execute next action."""
