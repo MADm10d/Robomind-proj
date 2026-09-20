@@ -1,234 +1,158 @@
-# 🤖 SE 444: Introduction to Artificial Intelligence
+# RoboMind
 
-<div align="center">
+An AI agent simulation that combines classical search, logical inference, and probabilistic reasoning to navigate uncertain grid-world environments.
 
-![AI Course](https://img.shields.io/badge/Course-SE%20444-blue?style=for-the-badge)
-![Credits](https://img.shields.io/badge/Credits-3-green?style=for-the-badge)
-![Hours](https://img.shields.io/badge/Hours-3%20per%20week-orange?style=for-the-badge)
+[![Python](https://img.shields.io/badge/Python-3.8%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Jupyter](https://img.shields.io/badge/Jupyter-Notebooks-F37626?logo=jupyter&logoColor=white)](https://jupyter.org/)
+[![License](https://img.shields.io/badge/License-GPL--2.0-blue.svg)](LICENSE)
 
-</div>
+## Overview
 
-## 📚 Course Information
+RoboMind explores how an autonomous agent can make decisions in a changing environment. The system models a 2D grid world containing obstacles, goals, and uncertain sensor information. It evaluates multiple AI strategies and combines them into a hybrid agent capable of planning, reasoning, and acting under uncertainty.
 
-| **Field** | **Details** |
-|-----------|-------------|
-| 🆔 **Course Code** | SE 444 |
-| 📖 **Course Title** | Introduction to Artificial Intelligence |
-| 🎯 **Credits** | 3 |
-| ⏰ **Lecture Hours** | 3 hours per week |
-| 📋 **Prerequisites** | Data Structures, Algorithm Design |
-| 🏷️ **Course Type** | Required/Elective |
+The project is designed to demonstrate practical understanding of:
 
----
+- Path planning and graph search
+- Knowledge representation and rule-based inference
+- Bayesian reasoning and belief updates
+- Agent architecture and decision-making
+- Algorithm evaluation and performance analysis
 
-## 👨‍🏫 Instructor Information
+## Key Capabilities
 
-> **📧 Contact & Office Details**
+### Search and Path Planning
 
-| **Info** | **Details** |
-|----------|-------------|
-| 👤 **Name** | Prof. Anis Koubaa |
-| 📧 **Email** | akoubaa@alfaisal.edu |
-| 🏢 **Office** | SG-10 |
-| 📞 **Office Phone** | 7497 |
-| 🕐 **Office Hours** | Available by appointment |
+Implements and compares classical search strategies including:
 
----
+- Breadth-First Search (BFS)
+- Uniform-Cost Search (UCS)
+- A* search with configurable heuristics
+- Local-search approaches such as simulated annealing
 
-## 📝 Course Description
+### Logical Reasoning
 
-> 🎯 **What You'll Learn**
+Uses a knowledge base to represent known facts and derive additional information through rules. This enables the agent to identify safe moves and reason about partially observed areas of the environment.
 
-In this course, students will learn the **foundational principles** that drive AI applications and practice implementing some of the AI-enabled systems. 
+### Probabilistic Decision-Making
 
-**Key Areas Include:**
-- 🔍 Machine learning & search methods
-- 🎮 Game playing algorithms  
-- 🎯 Markov decision processes
-- 🧩 Constraint satisfaction
-- 📊 Graphical models & logic
-- 🛠️ Tools and systems for real-world AI problems
+Models noisy sensor readings and updates the agent's beliefs using Bayesian reasoning. This allows the agent to make useful decisions even when the environment cannot be observed perfectly.
 
----
+### Hybrid Agent Architecture
 
-## 🎯 Course Learning Outcomes (CLO)
+The hybrid agent combines planning, logic, and probability:
 
-> 🚀 **By the end of this course, you will be able to:**
+1. Perceive the current environment
+2. Update beliefs from sensor observations
+3. Infer safe or unsafe actions
+4. Plan a route toward the goal
+5. Execute the next action and repeat
 
-### 🧠 1. Knowledge & Understanding
-```
-📌 CLO 1.1: Describe and identify the basic concepts of artificial intelligence, 
-            fundamental problem-solving and inference approaches, techniques for 
-            exploiting regularity in data, and computational theories related to 
-            human intelligence, along with their applications.
-```
+## Project Structure
 
-### ⚙️ 2. Skills
-```
-📌 CLO 2.1: Assess and evaluate the design and operation of AI models.
-📌 CLO 2.2: Apply search methods and techniques to solve AI problems.
+```text
+.
+├── course-project/
+│   └── RoboMind/
+│       ├── main.py                  # Simulation and experiment entry point
+│       ├── environment.py           # Grid-world environment
+│       ├── agents/                  # Search, logic, probabilistic, and hybrid agents
+│       ├── ai_core/                 # Search, knowledge-base, and Bayesian components
+│       ├── utils/                   # Visualization and metrics utilities
+│       ├── maps/                    # Example environments
+│       └── requirements.txt         # Python dependencies
+├── lectures/                        # Supporting technical notes and examples
+└── README.md
 ```
 
-### 🤝 3. Values, Autonomy, and Responsibility
+## Getting Started
+
+### Requirements
+
+- Python 3.8 or later
+- pip
+- Jupyter Notebook, if you want to explore the notebooks and experiments
+
+### Installation
+
+```bash
+git clone https://github.com/MADm10d/Robomind-proj.git
+cd Robomind-proj/course-project/RoboMind
+python -m venv .venv
+source .venv/bin/activate       # Windows: .venv\\Scripts\\activate
+pip install -r requirements.txt
 ```
-📌 CLO 3.1: Work cooperatively effectively as member/leader of a development 
-            team to deliver quality systems.
+
+### Run the Simulation
+
+```bash
+python main.py --demo
 ```
 
----
+Run the available algorithm tests or the complete experiment suite:
 
-## 📋 Major Topics
+```bash
+python main.py --test-search
+python main.py --test-logic
+python main.py --test-probability
+python main.py --test-hybrid
+python main.py --experiment all
+```
 
-<table>
-<tr>
-<td width="50%">
+## Evaluation
 
-### 🔍 **Core Fundamentals**
-- 🤖 Overview of Artificial Intelligence
-- 🎯 Intelligent Agents
-- 👁️ Perception
-- 🔒 Privacy, fairness, and safe AI
+The project supports comparing agents using measurable performance indicators:
 
-### 🔍 **Search Algorithms**
-- 🔄 Uninformed Search
-- 🎯 Informed Search
-- 🎮 Adversarial Search (Game Playing)
-- 📈 Simulated Annealing, Gradient Descent
+| Metric | Purpose |
+|---|---|
+| Path cost | Measures the cost of reaching the goal |
+| Nodes expanded | Indicates search efficiency |
+| Success rate | Measures how often an agent completes its objective |
+| Execution time | Captures computational performance |
+| Belief accuracy | Evaluates probabilistic state estimates |
 
-</td>
-<td width="50%">
+These metrics make it possible to compare solution quality, computational efficiency, and decision-making reliability across different agent designs.
 
-### 🧠 **Logic & Reasoning**
-- 🧩 Logical Agents
-- ⚡ Constraint Specification Problems
-- 🗺️ Planning and Acting in Real World
+## Technical Highlights
 
-### 📊 **Advanced Topics**
-- 🎲 Introduction to Markov Decision Processes
-- 🧬 Genetic Algorithms
+- Modular separation between environment, agent, reasoning, and evaluation layers
+- Reusable search and inference components
+- Support for deterministic and uncertain environments
+- Visual simulation of agent behavior
+- Experiment-oriented design for algorithm comparison
+- Python-based implementation with notebook support for analysis
 
-</td>
-</tr>
-</table>
+## Why This Project Matters
 
-> ⚠️ **Note:** *Calendar and outline are tentative and subject to change depending on unforeseen influential factors.*
+RoboMind demonstrates how foundational AI techniques can be combined into an end-to-end autonomous system. Rather than treating an algorithm in isolation, the project focuses on the engineering challenge of integrating perception, reasoning, planning, and action into a single decision loop.
 
----
+This makes the project relevant to work involving:
 
-## 📅 Weekly Schedule
+- Robotics and autonomous systems
+- Route planning and optimization
+- Decision-support systems
+- Simulation and experimentation
+- Intelligent software agents
+- Applied machine learning and AI research
 
-### 📚 **Phase 1: Foundations & Search** (Weeks 1-6)
+## Documentation
 
-| Week | 📖 Topic | 📝 Assessment/Activity |
-|:----:|---------|----------------------|
-| **1️⃣** | 🤖 Introduction to AI, intelligent agents<br/>🔍 Agents & environments, rationality and perception | — |
-| **2️⃣** | 🧠 Problem formulation, BFS, DFS<br/>⚙️ UCS, practice problems | 📋 Assignment 1 released<br/>💻 Lab (Search coding) |
-| **3️⃣** | 🎯 Informed search (Greedy, A*)<br/>🔍 Heuristics, A* lab | 📝 Quiz 1 (Search) |
-| **4️⃣** | 📈 Local Search (Simulated Annealing, Gradient Descent)<br/>💻 Local Search Lab | 💻 Lab |
-| **5️⃣** | 🧩 Constraint Satisfaction Problems (CSP)<br/>🔄 Backtracking, Sudoku/map coloring | 📋 Assignment 2 released<br/>💻 Lab |
-| **6️⃣** | 📚 Review & practice (Search + CSP)<br/>📊 **Midterm 1** (Weeks 1–5) | 🎯 **Exam** |
+- [RoboMind project documentation](course-project/RoboMind/README.md)
+- [Lecture notes and technical material](lectures/)
+- [Course policies](syllabus/policies.md)
 
-### 🧠 **Phase 2: Logic & Planning** (Weeks 7-11)
+## Future Improvements
 
-| Week | 📖 Topic | 📝 Assessment/Activity |
-|:----:|---------|----------------------|
-| **7️⃣** | 🧩 Propositional logic, inference<br/>📚 Knowledge representation basics | 💻 Lab |
-| **8️⃣** | 🔗 First-order logic, unification<br/>🏥 Logic lab (KB examples, medical diagnosis) | 📋 Assignment 3 released<br/>💻 Lab |
-| **9️⃣** | 🗺️ Planning (STRIPS, robot navigation)<br/>🛠️ Planning lab, problem solving | 📝 Quiz 2 (Logic + Planning) |
-| **🔟** | 🎲 Probability basics, Bayes rule<br/>📧 Naïve Bayes, spam filter demo | 📋 Assignment 4 released<br/>💻 Lab |
-| **1️⃣1️⃣** | 📚 Review & practice (Logic + Probability)<br/>📊 **Midterm 2** (Weeks 7–10) | 🎯 **Exam** |
+Potential extensions include:
 
-### 🚀 **Phase 3: Advanced Topics & Projects** (Weeks 12-17)
+- Dynamic obstacles and changing goals
+- More advanced localization and particle filtering
+- Multi-agent coordination
+- Learning-based action selection
+- Additional benchmark environments
+- Automated experiment reports and dashboards
 
-| Week | 📖 Topic | 📝 Assessment/Activity |
-|:----:|---------|----------------------|
-| **1️⃣2️⃣** | 🕸️ Bayesian networks, inference<br/>🎯 Decision theory (Markov Decision Processes) | 💻 Lab |
-| **1️⃣3️⃣** | 👥 Multi-agent systems, game theory<br/>🤝 Prisoner's dilemma, auctions | 📋 Assignment 5 released<br/>💻 Lab |
-| **1️⃣4️⃣** | 🏖️ **Mid-Semester Break** | 🎄 — |
-| **1️⃣5️⃣** | 🔒 Privacy, fairness, and safe AI Applications | — |
-| **1️⃣6️⃣** | 🛠️ Project development + mentoring | — |
-| **1️⃣7️⃣** | 🎉 **Final Project Presentations & Wrap-up** | 📁 **Project due** |
+## Author
 
----
+**MADm10d**
 
-## 📊 Course Assessment
-
-<div align="center">
-
-### 🎯 **Grade Distribution**
-
-![Midterm 1](https://img.shields.io/badge/Midterm%201-20%25-red?style=for-the-badge)
-![Midterm 2](https://img.shields.io/badge/Midterm%202-20%25-red?style=for-the-badge)
-![Final](https://img.shields.io/badge/Final-30%25-darkred?style=for-the-badge)
-![Quizzes](https://img.shields.io/badge/Quizzes-20%25-blue?style=for-the-badge)
-![Projects](https://img.shields.io/badge/Projects-10%25-green?style=for-the-badge)
-
-</div>
-
-| 📝 **Assessment Component** | ⚖️ **Weight** | 📋 **Details** |
-|---------------------------|------------|-------------|
-| 📊 **Midterm Exam 1** | `20%` | 🔍 Covers Weeks 1–5 (Search, Games, CSP) |
-| 📊 **Midterm Exam 2** | `20%` | 🧠 Covers Weeks 7–10 (Logic, Planning, Probability) |
-| 📋 **Final Exam** | `30%` | 📚 Comprehensive |
-| ❓ **Quizzes (2)** | `20%` | 📝 Quiz 1 (Search), Quiz 2 (Logic & Planning) |
-| 🚀 **Projects** | `10%` | 💻 Final project and practical implementations |
-
----
-
-## 📚 Required Textbooks
-
-### 📖 **Primary Textbook**
-> **🎯 Main Reference**
-> 
-> 📘 **Artificial Intelligence - A Modern Approach (4th Ed)**  
-> 👨‍💼 *Authors:* Stuart Russell and Peter Norvig  
-> 🏆 *The definitive AI textbook*
-
----
-
-## 🔗 Additional Resources
-
-<table>
-<tr>
-<td width="33%">
-
-### 🌐 **Online Resources**
-- 💻 [Alfaisal E-Learning Portal](https://elearning.alfaisal.edu/)
-- 📝 Course materials
-- 📊 Supplemental resources
-
-</td>
-<td width="33%">
-
-### 🔬 **Hands-on Learning**
-- 💻 Laboratory sessions
-- 🛠️ Coding exercises
-- 🎯 Practical implementations
-
-</td>
-<td width="33%">
-
-### 👨‍🏫 **Support**
-- 🕐 Regular office hours
-- 📧 Email support
-- 🤝 Student mentoring
-
-</td>
-</tr>
-</table>
-
----
-
-<div align="center">
-
-### 📢 **Important Notice**
-
-> ⚠️ *This syllabus is subject to change based on course progress and academic calendar adjustments.*
-> 
-> 📋 *For detailed course policies including attendance, academic integrity, and submission guidelines, please see the [Course Policies](syllabus/policies.md) document.*
-
----
-
-**🎓 Ready to dive into the world of Artificial Intelligence? Let's get started! 🚀**
-
-</div>
+If you are interested in the implementation or would like to discuss the design decisions, feel free to explore the source code and open an issue.
