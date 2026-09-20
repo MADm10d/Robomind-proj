@@ -150,9 +150,3 @@ Potential extensions include:
 - Learning-based action selection
 - Additional benchmark environments
 - Automated experiment reports and dashboards
-
-## Author
-
-**MADm10d**
-
-If you are interested in the implementation or would like to discuss the design decisions, feel free to explore the source code and open an issue.
